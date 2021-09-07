@@ -4,7 +4,7 @@
 #include <string>
 #include <limits>
 
-#include "trace_analysis_cpp_impl/record.hpp"
+#include "caret_analyze_cpp_impl/record.hpp"
 
 
 RecordBase::RecordBase(std::unordered_map<std::string, uint64_t> init)

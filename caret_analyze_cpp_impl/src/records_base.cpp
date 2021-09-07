@@ -14,9 +14,9 @@
 
 #include "nlohmann/json.hpp"
 
-#include "trace_analysis_cpp_impl/record.hpp"
-#include "trace_analysis_cpp_impl/common.hpp"
-#include "trace_analysis_cpp_impl/progress.hpp"
+#include "caret_analyze_cpp_impl/record.hpp"
+#include "caret_analyze_cpp_impl/common.hpp"
+#include "caret_analyze_cpp_impl/progress.hpp"
 
 enum Side {Left, Right};
 

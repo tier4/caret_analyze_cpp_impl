@@ -1,7 +1,7 @@
 #include <memory>
 
 #include "indicators/progress_spinner.hpp"
-#include "trace_analysis_cpp_impl/progress.hpp"
+#include "caret_analyze_cpp_impl/progress.hpp"
 
 Progress::~Progress()
 {

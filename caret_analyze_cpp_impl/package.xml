@@ -1,11 +1,11 @@
 <?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
-  <name>trace_analysis_cpp_impl</name>
+  <name>caret_analyze_cpp_impl</name>
   <version>0.0.0</version>
-  <description>TODO: Package description</description>
-  <maintainer email="hasegawa.ats@gmail.com">hasegawa</maintainer>
-  <license>TODO: License declaration</license>
+  <description>c++ implementation of caret_analyze</description>
+  <maintainer email="hasegawa@isp.co.jp">hasegawa</maintainer>
+  <license>Apache 2.0</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 
