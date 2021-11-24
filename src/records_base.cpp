@@ -366,27 +366,29 @@ RecordsBase RecordsBase::_merge_sequencial(
     };
 
   concat_records._sort("merge_stamp", "side", true);
-  std::unordered_map<int, uint64_t> sub_empty_records;
+  std::unordered_map<int, uint64_t> to_left_records;
+  std::unordered_map<uint64_t, std::vector<RecordBase*>> sub_records_map;
   for (uint64_t i = 0; i < (uint64_t)concat_records.data_->size(); i++) {
     auto & record = (*concat_records.data_)[i];
     if (record.get("side") == Left && record.get("has_merge_stamp")) {
-      record.add("sub_record_index", UINT64_MAX);  // use MAX as None
+      sub_records_map[i] = std::vector<RecordBase*>();
+      record.add("record_index", i);  // use MAX as None
 
       auto join_value = get_join_value(record);
-      if (join_value == UINT16_MAX) {
+      if (join_value == UINT64_MAX) {
         continue;
       }
-      sub_empty_records[join_value] = i;
+      to_left_records[join_value] = i;
     } else if (record.get("side") == Right && record.get("has_merge_stamp")) {
       auto join_value = get_join_value(record);
-      if (join_value == UINT16_MAX) {
+      if (join_value == UINT64_MAX) {
         continue;
       }
-      if (sub_empty_records.count(join_value) > 0) {
-        auto pre_left_record_index = sub_empty_records[join_value];
+      if (to_left_records.count(join_value) > 0) {
+        auto pre_left_record_index = to_left_records[join_value];
         RecordBase & pre_left_record = (*concat_records.data_)[pre_left_record_index];
-        pre_left_record.add("sub_record_index", i);
-        sub_empty_records.erase(join_value);
+        uint64_t record_index = pre_left_record.get("record_index");
+        sub_records_map[record_index].emplace_back(&record);
       }
     }
   }
@@ -422,29 +424,35 @@ RecordsBase RecordsBase::_merge_sequencial(
       continue;
     }
 
-    RecordBase * sub_record_ptr = nullptr;
-    auto sub_record_index = current_record.get("sub_record_index");
-    if (sub_record_index != UINT64_MAX) {
-      sub_record_ptr = &(*concat_records.data_)[sub_record_index];
-    }
-
-    if (sub_record_ptr == nullptr || added.count(sub_record_ptr) > 0) {
+    std::vector<RecordBase*> sub_records_ptr = sub_records_map[i];
+    if (sub_records_ptr.size() == 0) {
       if (merge_left) {
         merged_records.append(current_record);
         added.insert(&current_record);
       }
       continue;
     }
-    RecordBase merge_record = current_record;
-    merge_record._merge(*sub_record_ptr);
-    merged_records.append(merge_record);
-    added.insert(&current_record);
-    added.insert(sub_record_ptr);
+
+    for (auto &sub_record_ptr : sub_records_ptr)
+    {
+      if (added.count(sub_record_ptr) > 0) {
+        if (merge_left) {
+          merged_records.append(current_record);
+          added.insert(&current_record);
+        }
+        continue;
+      }
+      RecordBase merge_record = current_record;
+      merge_record._merge(*sub_record_ptr);
+      merged_records.append(merge_record);
+      added.insert(&current_record);
+      added.insert(sub_record_ptr);
+    }
   }
 
   merged_records._drop_columns(
     {"side", "has_merge_stamp", "merge_stamp", "has_valid_join_key",
-      "sub_record_index"});
+      "record_index"});
 
   return merged_records;
 }

@@ -23,25 +23,27 @@ void run_merge_with_drop(std::string how);
 void run_merge_sequencial_for_addr_track();
 void run_merge_sequencial_with_key(std::string how);
 void run_merge_sequencial_with_loss(std::string how);
+void run_merge_sequencial_without_key(std::string how);
 
 int main(int argc, char ** argvs)
 {
   (void) argc;
   (void) argvs;
-//   run_merge("inner");
-//   run_merge("left");
-//   run_merge("right");
-//   run_merge("outer");
+  // run_merge("inner");
+  // run_merge("left");
+  // run_merge("right");
+  // run_merge("outer");
 
-//   run_merge_with_drop("inner");
-//   run_merge_with_drop("left");
-//   run_merge_with_drop("right");
-//   run_merge_with_drop("outer");
+  // run_merge_with_drop("inner");
+  // run_merge_with_drop("left");
+  // run_merge_with_drop("right");
+  // run_merge_with_drop("outer");
 
-//   run_merge_sequencial_for_addr_track();
+  // run_merge_sequencial_for_addr_track();
 
-//   run_merge_sequencial_with_key("inner");
-  run_merge_sequencial_with_loss("inner");
+  // run_merge_sequencial_with_key("inner");
+  // run_merge_sequencial_with_loss("inner");
+  run_merge_sequencial_without_key("innner");
   return 0;
 }
 
@@ -164,6 +166,28 @@ void run_merge_sequencial_with_key(std::string how)
   print_records(merged_records);
 }
 
+void run_merge_sequencial_without_key(std::string how)
+{
+  RecordsBase left_records;
+  auto & left_data = *left_records.data_;
+  left_data.emplace_back(RecordBase({{"stamp", 0}}));
+  left_data.emplace_back(RecordBase({{"stamp", 3}}));
+  left_data.emplace_back(RecordBase({{"stamp", 4}}));
+  left_data.emplace_back(RecordBase({{"stamp", 5}}));
+  left_data.emplace_back(RecordBase({{"stamp", 8}}));
+
+  RecordsBase right_records;
+  auto & right_data = *right_records.data_;
+  right_data.emplace_back(RecordBase({{"sub_stamp", 1}}));
+  right_data.emplace_back(RecordBase({{"sub_stamp", 6}}));
+  right_data.emplace_back(RecordBase({{"sub_stamp", 7}}));
+
+  auto merged_records = left_records._merge_sequencial(
+    right_records, "stamp", "sub_stamp", "",
+    how);
+
+  print_records(merged_records);
+}
 
 void run_merge_sequencial_with_loss(std::string how)
 {
