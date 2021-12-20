@@ -44,10 +44,11 @@ PYBIND11_MODULE(record_cpp_impl, m) {
   )
   .def("change_dict_key", &RecordBase::change_dict_key)
   .def("equals", &RecordBase::equals)
-  .def("_merge", &RecordBase::_merge)
+  .def("merge", &RecordBase::merge)
   .def("add", &RecordBase::add)
-  .def("_drop_columns", &RecordBase::_drop_columns)
+  .def("drop_columns", &RecordBase::drop_columns)
   .def("get", &RecordBase::get)
+  .def("get_with_default", &RecordBase::get_with_default)
   .def_property_readonly("data", &RecordBase::get_data)
   .def_property_readonly("columns", &RecordBase::get_columns);
 
@@ -61,24 +62,28 @@ PYBIND11_MODULE(record_cpp_impl, m) {
   )
   .def(
     py::init(
-      [](std::vector<RecordBase> init) {
-        return new RecordsBase(init);
+      [](std::vector<RecordBase> init, std::vector<std::string> columns) {
+        return new RecordsBase(init, columns);
       })
   )
   .def("append", &RecordsBase::append)
+  .def("append_column", &RecordsBase::append_column)
+  .def("clone", &RecordsBase::clone)
   .def("equals", &RecordsBase::equals)
-  .def("_drop_columns", &RecordsBase::_drop_columns)
-  .def("_rename_columns", &RecordsBase::_rename_columns)
-  .def("_filter", &RecordsBase::_filter)
-  .def("_concat", &RecordsBase::_concat)
-  .def("_sort", &RecordsBase::_sort)
-  .def("_merge", &RecordsBase::_merge)
-  .def("_merge_sequencial", &RecordsBase::_merge_sequencial)
-  .def("_bind_drop_as_delay", &RecordsBase::_bind_drop_as_delay)
+  .def("drop_columns", &RecordsBase::drop_columns)
+  .def("rename_columns", &RecordsBase::rename_columns)
+  .def("filter_if", &RecordsBase::filter_if)
+  .def("reindex", &RecordsBase::reindex)
+  .def("concat", &RecordsBase::concat)
+  .def("sort", &RecordsBase::sort)
+  .def("sort_column_order", &RecordsBase::sort_column_order)
+  .def("merge", &RecordsBase::merge)
+  .def("merge_sequencial", &RecordsBase::merge_sequencial)
+  .def("bind_drop_as_delay", &RecordsBase::bind_drop_as_delay)
   .def(
-    "_merge_sequencial_for_addr_track",
-    &RecordsBase::_merge_sequencial_for_addr_track)
-  .def_property_readonly("_data", &RecordsBase::get_data)
+    "merge_sequencial_for_addr_track",
+    &RecordsBase::merge_sequencial_for_addr_track)
+  .def_property_readonly("data", &RecordsBase::get_data)
   .def_property_readonly("columns", &RecordsBase::get_columns);
 
 #ifdef VERSION_INFO

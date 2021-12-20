@@ -34,24 +34,53 @@
 
 enum Side {Left, Right};
 
-RecordsBase::RecordsBase(std::vector<RecordBase> init)
+class UniqueList
+{
+public:
+  void add_columns(std::vector<std::string> columns)
+  {
+    for (auto & column : columns) {
+      if (!has(column)) {
+        columns_.push_back(column);
+      }
+    }
+  }
+
+  std::vector<std::string> as_list()
+  {
+    return columns_;
+  }
+
+private:
+  bool has(std::string column)
+  {
+    return std::count(columns_.begin(), columns_.end(), column) > 0;
+  }
+
+  std::vector<std::string> columns_;
+};
+
+RecordsBase::RecordsBase(std::vector<RecordBase> init, std::vector<std::string> columns)
 : RecordsBase()
 {
   for (auto & record : init) {
     append(record);
   }
+  for (auto & column : columns) {
+    columns_->push_back(column);
+  }
 }
 
 RecordsBase::RecordsBase()
 : data_(std::make_shared<std::vector<RecordBase>>()),
-  columns_(std::make_shared<std::unordered_set<std::string>>())
+  columns_(std::make_shared<std::vector<std::string>>())
 {
 }
 
 RecordsBase::RecordsBase(const RecordsBase & records)
 {
-  data_ = std::make_shared<DataT>(*records.data_);
-  columns_ = std::make_shared<ColumnT>(*records.columns_);
+  data_ = std::make_shared<std::vector<RecordBase>>(*records.data_);
+  columns_ = std::make_shared<std::vector<std::string>>(*records.columns_);
 }
 
 RecordsBase::RecordsBase(std::string json_path)
@@ -72,9 +101,9 @@ RecordsBase::RecordsBase(std::string json_path)
   }
 }
 
-void RecordsBase::_bind_drop_as_delay(const std::string sort_key)
+void RecordsBase::bind_drop_as_delay()
 {
-  this->_sort(sort_key, "", false);
+  sort_column_order(false, false);
 
   std::unordered_map<std::string, uint64_t> oldest_values;
 
@@ -91,15 +120,27 @@ void RecordsBase::_bind_drop_as_delay(const std::string sort_key)
     }
   }
 
-  this->_sort(sort_key, "", true);
+  sort_column_order(true, true);
 }
 
 void RecordsBase::append(const RecordBase & other)
 {
   data_->push_back(other);
-  for (auto & pair : other.get_data()) {
-    columns_->insert(pair.first);
+}
+
+void RecordsBase::append_column(const std::string column, const std::vector<uint64_t> values)
+{
+  columns_->push_back(column);
+  for (size_t i = 0; i < data_->size(); i++) {
+    auto & record = (*data_)[i];
+    auto & value = values[i];
+    record.add(column, value);
   }
+}
+
+RecordsBase RecordsBase::clone()
+{
+  return RecordsBase(*this);
 }
 
 bool RecordsBase::equals(const RecordsBase & other) const
@@ -124,26 +165,43 @@ bool RecordsBase::equals(const RecordsBase & other) const
   return true;
 }
 
-void RecordsBase::_drop_columns(std::vector<std::string> column_names)
+void RecordsBase::drop_columns(std::vector<std::string> column_names)
 {
   for (auto & record : *data_) {
-    record._drop_columns(column_names);
+    record.drop_columns(column_names);
   }
-  for (auto & column_name : column_names) {
-    columns_->erase(column_name);
+
+  auto has_key = [&](std::string column) -> bool {
+      for (auto column_name : column_names) {
+        if (column == column_name) {
+          return true;
+        }
+      }
+      return false;
+    };
+
+  auto columns_tmp = *columns_;
+  columns_->clear();
+  for (auto & column_tmp : columns_tmp) {
+    if (has_key(column_tmp)) {
+      continue;
+    }
+    columns_->push_back(column_tmp);
   }
 }
 
-void RecordsBase::_rename_columns(std::unordered_map<std::string, std::string> renames)
+void RecordsBase::rename_columns(
+  std::unordered_map<std::string, std::string> renames)
 {
   for (auto & record : *data_) {
     for (auto & pair : renames) {
       record.change_dict_key(pair.first, pair.second);
     }
   }
-  for (auto & pair : renames) {
-    columns_->erase(pair.first);
-    columns_->insert(pair.second);
+  for (auto & column : *columns_) {
+    if (renames.count(column) > 0) {
+      column = renames[column];
+    }
   }
 }
 
@@ -153,7 +211,7 @@ std::vector<RecordBase> RecordsBase::get_data() const
   return *data_;
 }
 
-std::unordered_set<std::string> RecordsBase::get_columns() const
+std::vector<std::string> RecordsBase::get_columns() const
 {
   return *columns_;
 }
@@ -167,15 +225,19 @@ Cont filter(const Cont & container, Pred predicate)
   return result;
 }
 
-void RecordsBase::_filter(std::function<bool(RecordBase)> & f)
+void RecordsBase::filter_if(std::function<bool(RecordBase)> & f)
 {
   *data_ = filter(*data_, f);
 }
 
-void RecordsBase::_concat(const RecordsBase & other)
+void RecordsBase::reindex(std::vector<std::string> columns)
+{
+  *columns_ = columns;
+}
+
+void RecordsBase::concat(const RecordsBase & other)
 {
   auto other_data = *other.data_;
-  *columns_ = merge_set<std::string>(*columns_, *other.columns_);
   data_->insert(data_->end(), other_data.begin(), other_data.end());
 }
 
@@ -208,15 +270,82 @@ private:
   bool ascending_;
 };
 
-void RecordsBase::_sort(std::string key, std::string sub_key, bool ascending)
+void RecordsBase::sort(std::string key, std::string sub_key, bool ascending)
 {
   std::sort(data_->begin(), data_->end(), RecordComp{key, sub_key, ascending});
 }
 
+class RecordCompColumnOrder
+{
+public:
+  RecordCompColumnOrder(
+    std::vector<std::string> columns,
+    bool ascending,
+    bool put_none_at_top
+  )
+  : columns_(columns), ascending_(ascending)
+  {
+    if (ascending_) {
+      if (put_none_at_top) {
+        default_value_ = UINT64_MAX;
+      } else {
+        default_value_ = 0;
+      }
+    } else {
+      if (put_none_at_top) {
+        default_value_ = 0;
+      } else {
+        default_value_ = UINT64_MAX;
+      }
+    }
+  }
 
-RecordsBase RecordsBase::_merge(
+  bool operator()(const RecordBase & a, const RecordBase & b) const noexcept
+  {
+    if (ascending_) {
+      for (auto & column : columns_) {
+        auto left = a.get_with_default(column, default_value_);
+        auto right = b.get_with_default(column, default_value_);
+        if (left < right) {
+          return true;
+        } else if (left > right) {
+          return false;
+        }
+      }
+      return true;
+    } else {
+      for (auto & column : columns_) {
+        auto left = a.get_with_default(column, default_value_);
+        auto right = b.get_with_default(column, default_value_);
+        if (left > right) {
+          return true;
+        } else if (left < right) {
+          return false;
+        }
+      }
+      return true;
+    }
+  }
+
+private:
+  std::vector<std::string> columns_;
+  bool ascending_;
+  uint64_t default_value_;
+};
+
+void RecordsBase::sort_column_order(bool ascending, bool put_none_at_top)
+{
+  std::sort(
+    data_->begin(),
+    data_->end(), RecordCompColumnOrder{*columns_, ascending, put_none_at_top});
+}
+
+
+RecordsBase RecordsBase::merge(
   const RecordsBase & right_records,
-  std::string join_key,
+  std::string join_left_key,
+  std::string join_right_key,
+  std::vector<std::string> columns,
   std::string how,
   std::string progress_label
 )
@@ -224,138 +353,207 @@ RecordsBase RecordsBase::_merge(
   // [python side implementation]
   // assert how in ["inner", "left", "right", "outer"]
 
-
   bool merge_right_record = how == "right" || how == "outer";
   bool merge_left_record = how == "left" || how == "outer";
 
   auto left_records_copy = RecordsBase(*this);
   auto right_records_copy = RecordsBase(right_records);
 
-  for (auto & left_record : *left_records_copy.data_) {
-    left_record.add("side", Left);
-  }
+  auto column_side = "_tmp_merge_side";
+  auto column_merge_stamp = "_tmp_merge_stamp";
+  auto column_has_valid_join_key = "_tmp_merge_has_valid_join_key";
+  auto column_join_key = "_tmp_merge_join_key";
+  auto column_found_right_record = "_tmp_merge_found_right_record";
 
-  for (auto & right_record : *right_records_copy.data_) {
-    right_record.add("side", Right);
-  }
 
-  RecordsBase & concat_records = left_records_copy;
-  concat_records._concat(right_records_copy);
+  left_records_copy.append_column(
+    column_side,
+    std::vector<uint64_t>(left_records_copy.data_->size(), Left)
+  );
+
+  right_records_copy.append_column(
+    column_side,
+    std::vector<uint64_t>(right_records_copy.data_->size(), Right)
+  );
+
+  auto concat_columns = UniqueList();
+  concat_columns.add_columns(*left_records_copy.columns_);
+  concat_columns.add_columns(*right_records_copy.columns_);
+  concat_columns.add_columns(
+  {
+    column_side,
+    column_has_valid_join_key,
+    column_merge_stamp,
+    column_join_key
+  });
+
+  RecordsBase concat_records = RecordsBase({}, concat_columns.as_list());
+  concat_records.concat(left_records_copy);
+  concat_records.concat(right_records_copy);
+
   for (auto & record : *concat_records.data_) {
-    record.add("has_valid_join_key", record.columns_.count(join_key) > 0);
-
-    if (record.columns_.count(join_key) > 0) {
-      record.add("merge_stamp", record.get(join_key));
+    std::string join_key;
+    if (record.get(column_side) == Left) {
+      join_key = join_left_key;
     } else {
-      record.add("merge_stamp", UINT64_MAX);
+      join_key = join_right_key;
+    }
+
+    auto has_valid_join_key = record.columns_.count(join_key) > 0;
+    record.add(column_has_valid_join_key, has_valid_join_key);
+
+    if (has_valid_join_key) {
+      record.add(column_merge_stamp, record.get(join_key));
+      record.add(column_join_key, record.get(join_key));
+    } else {
+      record.add(column_merge_stamp, UINT64_MAX);
     }
   }
 
-  concat_records._sort("merge_stamp", "side", true);
+  concat_records.sort(column_merge_stamp, column_side, true);
 
   std::vector<RecordBase *> empty_records;
   RecordBase * left_record_ = nullptr;
 
-  RecordsBase merged_records;
-  *merged_records.columns_ = merge_set<std::string>(*columns_, *right_records.columns_);
+  RecordsBase merged_records({}, columns);
 
   auto bar = Progress(concat_records.data_->size(), progress_label);
   for (uint64_t i = 0; i < (uint64_t)concat_records.data_->size(); i++) {
     bar.tick();
     auto & record = (*concat_records.data_)[i];
-    if (!record.get("has_valid_join_key")) {
-      if (record.get("side") == Left && merge_left_record) {
+    if (!record.get(column_has_valid_join_key)) {
+      if (record.get(column_side) == Left && merge_left_record) {
         merged_records.append(record);
-      } else if (record.get("side") == Right && merge_right_record) {
+      } else if (record.get(column_side) == Right && merge_right_record) {
         merged_records.append(record);
       }
       continue;
     }
 
-    auto join_value = record.get(join_key);
-    if (record.get("side") == Left) {
-      if (left_record_ && !left_record_->get("found_right_record")) {
+    auto join_value = record.get(column_join_key);
+    if (record.get(column_side) == Left) {
+      if (left_record_ && !left_record_->get(column_found_right_record)) {
         empty_records.push_back(left_record_);
       }
       left_record_ = &record;
-      left_record_->add("found_right_record", false);
+      left_record_->add(column_found_right_record, false);
     } else {
-      if (left_record_ && join_value == left_record_->get(join_key) &&
-        record.get("has_valid_join_key"))
+      if (left_record_ && join_value == left_record_->get(column_join_key) &&
+        record.get(column_has_valid_join_key))
       {
-        left_record_->add("found_right_record", true);
+        left_record_->add(column_found_right_record, true);
         auto merged_record = record;
-        merged_record._merge(*left_record_);
+        merged_record.merge(*left_record_);
         merged_records.append(merged_record);
       } else {
         empty_records.push_back(&record);
       }
     }
   }
-  if (left_record_ && !left_record_->get("found_right_record")) {
+  if (left_record_ && !left_record_->get(column_found_right_record)) {
     empty_records.push_back(left_record_);
   }
   for (auto & record_ptr : empty_records) {
     auto & record = *record_ptr;
-    if (record.get("side") == Left && merge_left_record) {
+    if (record.get(column_side) == Left && merge_left_record) {
       merged_records.append(record);
-    } else if (record.get("side") == Right && merge_right_record) {
+    } else if (record.get(column_side) == Right && merge_right_record) {
       merged_records.append(record);
     }
   }
 
-  merged_records._drop_columns(
-    {"side", "has_merge_stamp", "merge_stamp", "has_valid_join_key",
-      "found_right_record"});
+  merged_records.drop_columns(
+    {column_side, column_merge_stamp, column_join_key,
+      column_has_valid_join_key, column_found_right_record});
 
   return merged_records;
 }
 
 
-RecordsBase RecordsBase::_merge_sequencial(
+RecordsBase RecordsBase::merge_sequencial(
   const RecordsBase & right_records,
   std::string left_stamp_key,
   std::string right_stamp_key,
-  std::string join_key,
+  std::string join_left_key,
+  std::string join_right_key,
+  std::vector<std::string> columns,
   std::string how,
   std::string progress_label
 )
 {
-  auto left_records = RecordsBase(*this);
+  auto left_records_copy = RecordsBase(*this);
+  auto right_records_copy = RecordsBase(right_records);
 
-  bool merge_left = how == "left" || how == "outer";
+  bool merge_left = how == "left" || how == "outer" || how == "left_use_latest";
   bool merge_right = how == "right" || how == "outer";
+  bool bind_latest_left_record = how == "left_use_latest";
 
-  RecordsBase merged_records;
 
-  for (auto & left_record : *left_records.data_) {
-    left_record.add("side", Left);
-  }
+  RecordsBase merged_records({}, columns);
 
-  for (auto & right_record : *right_records.data_) {
-    right_record.add("side", Right);
-  }
+  auto column_side = "_merge_tmp_side";
+  auto column_has_valid_join_key = "merge_tmp_has_valid_join_key";
+  auto column_merge_stamp = "_merge_tmp_merge_stamp";
+  auto column_has_merge_stamp = "_merge_tmp_has_merge_stamp";
 
-  RecordsBase & concat_records = left_records;
-  concat_records._concat(right_records);
+  left_records_copy.append_column(
+    column_side,
+    std::vector<uint64_t>(left_records_copy.data_->size(), Left)
+  );
+
+  right_records_copy.append_column(
+    column_side,
+    std::vector<uint64_t>(right_records_copy.data_->size(), Right)
+  );
+
+  auto concat_columns = UniqueList();
+  concat_columns.add_columns(*left_records_copy.columns_);
+  concat_columns.add_columns(*right_records_copy.columns_);
+  concat_columns.add_columns(
+  {
+    column_has_merge_stamp,
+    column_merge_stamp,
+    column_has_merge_stamp,
+  });
+  RecordsBase concat_records = RecordsBase({}, concat_columns.as_list());
+  concat_records.concat(left_records_copy);
+  concat_records.concat(right_records_copy);
 
   for (auto & record : *concat_records.data_) {
-    record.add("has_valid_join_key", join_key == "" || record.columns_.count(join_key) > 0);
-
-    if (record.get("side") == Left && record.columns_.count(left_stamp_key) > 0) {
-      record.add("merge_stamp", record.get(left_stamp_key));
-      record.add("has_merge_stamp", true);
-    } else if (record.get("side") == Right && record.columns_.count(right_stamp_key) > 0) {
-      record.add("merge_stamp", record.get(right_stamp_key));
-      record.add("has_merge_stamp", true);
+    if (record.get(column_side) == Left) {
+      record.add(
+        column_has_valid_join_key,
+        join_left_key == "" || record.columns_.count(join_left_key) > 0
+      );
     } else {
-      record.add("merge_stamp", UINT64_MAX);
-      record.add("has_merge_stamp", false);
+      record.add(
+        column_has_valid_join_key,
+        join_right_key == "" || record.columns_.count(join_right_key) > 0
+      );
+    }
+
+    if (record.get(column_side) == Left && record.columns_.count(left_stamp_key) > 0) {
+      record.add(column_merge_stamp, record.get(left_stamp_key));
+      record.add(column_has_merge_stamp, true);
+    } else if (record.get(column_side) == Right && record.columns_.count(right_stamp_key) > 0) {
+      record.add(column_merge_stamp, record.get(right_stamp_key));
+      record.add(column_has_merge_stamp, true);
+    } else {
+      record.add(column_merge_stamp, UINT64_MAX);
+      record.add(column_has_merge_stamp, false);
     }
   }
 
 
-  auto get_join_value = [&join_key](RecordBase & record) -> uint64_t {
+  auto get_join_value =
+    [&join_left_key, &join_right_key, &column_side](RecordBase & record) -> uint64_t {
+      std::string join_key;
+      if (record.get(column_side) == Left) {
+        join_key = join_left_key;
+      } else {
+        join_key = join_right_key;
+      }
+
       if (join_key == "") {
         return 0;
       } else if (record.columns_.count(join_key) > 0) {
@@ -365,31 +563,37 @@ RecordsBase RecordsBase::_merge_sequencial(
       }
     };
 
-  concat_records._sort("merge_stamp", "side", true);
-  std::unordered_map<int, uint64_t> to_left_records;
-  std::unordered_map<uint64_t, std::vector<RecordBase*>> sub_records_map;
+  concat_records.sort(column_merge_stamp, column_side, true);
+
+  // std::unordered_map<int, uint64_t> sub_empty_records;
+  std::unordered_map<uint64_t, uint64_t> to_left_record_index;
+  std::unordered_map<uint64_t, std::vector<uint64_t>> to_sub_record_indices;
+
   for (uint64_t i = 0; i < (uint64_t)concat_records.data_->size(); i++) {
     auto & record = (*concat_records.data_)[i];
-    if (record.get("side") == Left && record.get("has_merge_stamp")) {
-      sub_records_map[i] = std::vector<RecordBase*>();
-      record.add("record_index", i);  // use MAX as None
+    if (!record.get(column_has_merge_stamp)) {
+      continue;
+    }
+
+    if (record.get(column_side) == Left) {
+      to_sub_record_indices[i] = std::vector<uint64_t>();
 
       auto join_value = get_join_value(record);
       if (join_value == UINT64_MAX) {
         continue;
       }
-      to_left_records[join_value] = i;
-    } else if (record.get("side") == Right && record.get("has_merge_stamp")) {
+      to_left_record_index[join_value] = i;
+    } else if (record.get(column_side) == Right) {
       auto join_value = get_join_value(record);
       if (join_value == UINT64_MAX) {
         continue;
       }
-      if (to_left_records.count(join_value) > 0) {
-        auto pre_left_record_index = to_left_records[join_value];
-        RecordBase & pre_left_record = (*concat_records.data_)[pre_left_record_index];
-        uint64_t record_index = pre_left_record.get("record_index");
-        sub_records_map[record_index].emplace_back(&record);
+
+      if (to_left_record_index.count(join_value) == 0) {
+        continue;
       }
+      auto left_record_index = to_left_record_index[join_value];
+      to_sub_record_indices[left_record_index].push_back(i);
     }
   }
 
@@ -405,18 +609,20 @@ RecordsBase RecordsBase::_merge_sequencial(
       continue;
     }
 
-    if (!current_record.get("has_merge_stamp") || !current_record.get("has_valid_join_key")) {
-      if (current_record.get("side") == Left && merge_left) {
+    if (!current_record.get(column_has_merge_stamp) ||
+      !current_record.get(column_has_valid_join_key))
+    {
+      if (current_record.get(column_side) == Left && merge_left) {
         merged_records.append(current_record);
         added.insert(&current_record);
-      } else if (current_record.get("side") == Right && merge_right) {
+      } else if (current_record.get(column_side) == Right && merge_right) {
         merged_records.append(current_record);
         added.insert(&current_record);
       }
       continue;
     }
 
-    if (current_record.get("side") == Right) {
+    if (current_record.get(column_side) == Right) {
       if (merge_right) {
         merged_records.append(current_record);
         added.insert(&current_record);
@@ -424,8 +630,8 @@ RecordsBase RecordsBase::_merge_sequencial(
       continue;
     }
 
-    std::vector<RecordBase*> sub_records_ptr = sub_records_map[i];
-    if (sub_records_ptr.size() == 0) {
+    auto sub_record_indices = to_sub_record_indices[i];
+    if (sub_record_indices.size() == 0) {
       if (merge_left) {
         merged_records.append(current_record);
         added.insert(&current_record);
@@ -433,32 +639,43 @@ RecordsBase RecordsBase::_merge_sequencial(
       continue;
     }
 
-    for (auto &sub_record_ptr : sub_records_ptr)
-    {
-      if (added.count(sub_record_ptr) > 0) {
+    for (uint64_t j = 0; j < sub_record_indices.size(); j++) {
+      auto sub_record_index = sub_record_indices[j];
+      RecordBase & sub_record = (*concat_records.data_)[sub_record_index];
+      if (1 <= j && !bind_latest_left_record) {
+        break;
+      }
+
+      if (added.count(&sub_record) > 0) {
         if (merge_left) {
           merged_records.append(current_record);
           added.insert(&current_record);
         }
         continue;
       }
+
       RecordBase merge_record = current_record;
-      merge_record._merge(*sub_record_ptr);
+      merge_record.merge(sub_record);
       merged_records.append(merge_record);
       added.insert(&current_record);
-      added.insert(sub_record_ptr);
+      added.insert(&sub_record);
     }
   }
 
-  merged_records._drop_columns(
-    {"side", "has_merge_stamp", "merge_stamp", "has_valid_join_key",
-      "record_index"});
+  merged_records.drop_columns(
+  {
+    column_side,
+    column_has_merge_stamp,
+    column_merge_stamp,
+    column_has_valid_join_key,
+  }
+  );
 
   return merged_records;
 }
 
 
-RecordsBase RecordsBase::_merge_sequencial_for_addr_track(
+RecordsBase RecordsBase::merge_sequencial_for_addr_track(
   std::string source_stamp_key,
   std::string source_key,
   const RecordsBase & copy_records,
@@ -475,38 +692,71 @@ RecordsBase RecordsBase::_merge_sequencial_for_addr_track(
   // [python side implementation]
   // assert how in ["inner", "left", "right", "outer"]
 
-  auto source_records_ = RecordsBase(*this);
-  auto copy_records_ = copy_records;
-  auto sink_records_ = sink_records;
+  auto column_type = "_tmp_type";
+  auto column_timestamp = "_tmp_timestamp";
 
+  auto source_records_ = RecordsBase(*this);
+  auto copy_records_ = RecordsBase(copy_records);
+  auto sink_records_ = RecordsBase(sink_records);
+
+  source_records_.append_column(
+    column_type,
+    std::vector<uint64_t>(source_records_.data_->size(), Source)
+  );
+
+  copy_records_.append_column(
+    column_type,
+    std::vector<uint64_t>(copy_records_.data_->size(), Copy)
+  );
+
+  sink_records_.append_column(
+    column_type,
+    std::vector<uint64_t>(sink_records_.data_->size(), Sink)
+  );
+
+  std::vector<uint64_t> source_stamps;
+  std::vector<uint64_t> sink_stamps;
   for (auto & record : *source_records_.data_) {
-    record.add("type", Source);
-    record.add("timestamp", record.get(source_stamp_key));
-  }
-  for (auto & record : *copy_records_.data_) {
-    record.add("type", Copy);
-    record.add("timestamp", record.get(copy_stamp_key));
+    source_stamps.emplace_back(record.get(source_stamp_key));
   }
   for (auto & record : *sink_records_.data_) {
-    record.add("type", Sink);
-    record.add("timestamp", record.get(sink_stamp_key));
+    sink_stamps.emplace_back(record.get(sink_stamp_key));
   }
 
-  auto & records = source_records_;
-  records._concat(copy_records_);
-  records._concat(sink_records_);
-  records._sort("timestamp", "type", false);
+  source_records_.append_column(column_timestamp, source_stamps);
+
+  copy_records_.rename_columns(
+    std::unordered_map<std::string, std::string>(
+  {
+    {copy_stamp_key, column_timestamp}
+  })
+  );
+
+  sink_records_.append_column(column_timestamp, sink_stamps);
+
+  auto merged_columns = UniqueList();
+  merged_columns.add_columns(*source_records_.columns_);
+  merged_columns.add_columns(*copy_records_.columns_);
+  merged_columns.add_columns(*sink_records_.columns_);
+
+  auto merged_records = RecordsBase({}, merged_columns.as_list());
+
+  auto concat_records = RecordsBase({}, merged_columns.as_list());
+  concat_records.concat(source_records_);
+  concat_records.concat(copy_records_);
+  concat_records.concat(sink_records_);
+  concat_records.sort(column_timestamp, column_type, false);
 
   std::vector<RecordBase> processing_records;
   using StampSet = std::set<uint64_t>;
   std::unordered_map<uint64_t, std::shared_ptr<StampSet>> stamp_sets;
 
   auto merge_processing_record_keys =
-    [&processing_records, &stamp_sets](RecordBase & processing_record) {
-      auto condition = [&processing_record, &stamp_sets](const RecordBase & x) {
-          std::shared_ptr<StampSet> & sink_set = stamp_sets[x.get("timestamp")];
+    [&processing_records, &stamp_sets, &column_timestamp](RecordBase & processing_record) {
+      auto condition = [&processing_record, &stamp_sets, &column_timestamp](const RecordBase & x) {
+          std::shared_ptr<StampSet> & sink_set = stamp_sets[x.get(column_timestamp)];
           std::shared_ptr<StampSet> & processing_record_set =
-            stamp_sets[processing_record.get("timestamp")];
+            stamp_sets[processing_record.get(column_timestamp)];
           std::shared_ptr<StampSet> result = std::make_shared<StampSet>();
 
           std::set_intersection(
@@ -521,9 +771,9 @@ RecordsBase RecordsBase::_merge_sequencial_for_addr_track(
       );
       for (auto & processing_record_ : processing_records_) {
         std::shared_ptr<StampSet> & processing_record_keys = stamp_sets[processing_record.get(
-              "timestamp")];
+              column_timestamp)];
         std::shared_ptr<StampSet> & corresponding_record_keys =
-          stamp_sets[processing_record_.get("timestamp")];
+          stamp_sets[processing_record_.get(column_timestamp)];
         std::shared_ptr<StampSet> merged_set = std::make_shared<StampSet>();
 
         std::set_union(
@@ -536,20 +786,20 @@ RecordsBase RecordsBase::_merge_sequencial_for_addr_track(
       }
     };
 
-  RecordsBase merged_records;
 
-  auto bar = Progress(records.data_->size(), progress_label);
-  for (auto & record : *records.data_) {
+  auto bar = Progress(concat_records.data_->size(), progress_label);
+  for (auto & record : *concat_records.data_) {
     bar.tick();
-    if (record.get("type") == Sink) {
-      auto timestamp = record.get("timestamp");
+    if (record.get(column_type) == Sink) {
+      auto timestamp = record.get(column_timestamp);
       auto stamp_set = std::make_shared<StampSet>();
       stamp_set->insert(record.get(sink_from_key));
       stamp_sets.insert(std::make_pair(timestamp, stamp_set));
       processing_records.emplace_back(record);
-    } else if (record.get("type") == Copy) {
-      auto condition = [&stamp_sets, &copy_to_key, &record](const RecordBase & x) {
-          auto timestamp = x.get("timestamp");
+    } else if (record.get(column_type) == Copy) {
+      auto condition =
+        [&stamp_sets, &copy_to_key, &record, &column_timestamp](const RecordBase & x) {
+          auto timestamp = x.get(column_timestamp);
           std::shared_ptr<StampSet> stamp_set = stamp_sets[timestamp];
           bool has_same_source_addrs = stamp_set->count(record.get(copy_to_key)) > 0;
           return has_same_source_addrs;
@@ -557,16 +807,17 @@ RecordsBase RecordsBase::_merge_sequencial_for_addr_track(
       std::vector<RecordBase> records_with_same_source_addrs =
         filter(processing_records, condition);
       for (auto & processing_record : records_with_same_source_addrs) {
-        auto timestamp = processing_record.get("timestamp");
+        auto timestamp = processing_record.get(column_timestamp);
         std::shared_ptr<StampSet> stamp_set = stamp_sets[timestamp];
         stamp_set->insert(record.get(copy_from_key));
         merge_processing_record_keys(processing_record);
         // No need for subsequent loops since we integreted them.
         break;
       }
-    } else if (record.get("type") == Source) {
-      auto condition = [&stamp_sets, &source_key, &record](const RecordBase & x) {
-          auto timestamp = x.get("timestamp");
+    } else if (record.get(column_type) == Source) {
+      auto condition =
+        [&stamp_sets, &source_key, &record, &column_timestamp](const RecordBase & x) {
+          auto timestamp = x.get(column_timestamp);
           std::shared_ptr<StampSet> stamp_set = stamp_sets[timestamp];
           bool has_same_source_addrs = stamp_set->count(record.get(source_key)) > 0;
           return has_same_source_addrs;
@@ -585,14 +836,16 @@ RecordsBase RecordsBase::_merge_sequencial_for_addr_track(
           it++;
         }
 
-        processing_record._merge(record);
+        processing_record.merge(record);
         merged_records.append(processing_record);
       }
     }
   }
 
   // Delete temporal columns
-  merged_records._drop_columns({"type", "timestamp", sink_from_key});
+  merged_records.drop_columns(
+  {
+    column_type, column_timestamp, sink_from_key, copy_from_key, copy_to_key, copy_stamp_key});
 
   return merged_records;
 }

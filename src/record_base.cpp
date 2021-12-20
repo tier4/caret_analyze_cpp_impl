@@ -48,6 +48,14 @@ uint64_t RecordBase::get(std::string key) const
   return data_.at(key);
 }
 
+uint64_t RecordBase::get_with_default(std::string key, uint64_t default_value) const
+{
+  if (data_.count(key) > 0) {
+    return data_.at(key);
+  }
+  return default_value;
+}
+
 void RecordBase::change_dict_key(std::string key_from, std::string key_to)
 {
   if (data_.count(key_from) == 0) {
@@ -59,7 +67,7 @@ void RecordBase::change_dict_key(std::string key_from, std::string key_to)
   columns_.insert(key_to);
 }
 
-void RecordBase::_drop_columns(std::vector<std::string> keys)
+void RecordBase::drop_columns(std::vector<std::string> keys)
 {
   for (auto & key : keys) {
     data_.erase(key);
@@ -78,7 +86,7 @@ void RecordBase::add(std::string key, uint64_t stamp)
   data_[key] = stamp;
 }
 
-void RecordBase::_merge(const RecordBase & other)
+void RecordBase::merge(const RecordBase & other)
 {
   for (auto & pair : other.data_) {
     add(pair.first, pair.second);
