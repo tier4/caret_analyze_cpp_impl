@@ -19,6 +19,7 @@ src/pybind.cpp
 src/record_base.cpp
 src/records_base.cpp
 src/progress.cpp
+src/column_manager.cpp
 )
 
 install(
@@ -36,6 +37,7 @@ src/merge_sample.cpp
 src/record_base.cpp
 src/records_base.cpp
 src/progress.cpp
+src/column_manager.cpp
 )
 
 if(BUILD_TESTING)

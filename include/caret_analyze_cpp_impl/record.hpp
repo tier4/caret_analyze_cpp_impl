@@ -14,13 +14,18 @@
 
 #ifndef CARET_ANALYZE_CPP_IMPL__RECORD_HPP_
 
+#include <tuple>
 #include <unordered_set>
 #include <unordered_map>
 #include <vector>
 #include <string>
 #include <functional>
 #include <memory>
+#include <map>
 #include <algorithm>
+#include <utility>
+
+#include "caret_analyze_cpp_impl/column_manager.hpp"
 
 class RecordBase
 {
@@ -37,13 +42,14 @@ public:
   void change_dict_key(std::string key_from, std::string key_to);
   bool equals(const RecordBase & other) const;
   void merge(const RecordBase & other);
-  uint64_t get(std::string key) const;
-  uint64_t get_with_default(std::string key, uint64_t default_value) const;
-  void add(std::string key, uint64_t stamp);
-  void drop_columns(std::vector<std::string> keys);
+  uint64_t get(std::string column) const;
+  uint64_t get_with_default(std::string column, uint64_t default_value) const;
+  void add(std::string column, uint64_t stamp);
+  void drop_columns(std::vector<std::string> columns);
+  bool has_column(const std::string column);
 
-  std::unordered_map<std::string, uint64_t> data_;
-  std::unordered_set<std::string> columns_;
+private:
+  std::unordered_map<size_t, uint64_t> data_;
 };
 
 
@@ -52,7 +58,7 @@ class RecordsBase
 public:
   RecordsBase();
   RecordsBase(const RecordsBase & records);
-  explicit RecordsBase(std::vector<RecordBase> records, std::vector<std::string> columns);
+  RecordsBase(std::vector<RecordBase> records, std::vector<std::string> columns);
   explicit RecordsBase(std::string json_path);
 
   ~RecordsBase() = default;
@@ -63,6 +69,7 @@ public:
 
   void append(const RecordBase & other);
   void append_column(const std::string column, const std::vector<uint64_t> values);
+  void set_columns(const std::vector<std::string> columns);
   bool equals(const RecordsBase & other) const;
   RecordsBase clone();
   void drop_columns(std::vector<std::string> column_names);
@@ -73,6 +80,16 @@ public:
   void sort_column_order(bool ascending = true, bool put_none_at_top = true);
   void bind_drop_as_delay();
   void reindex(std::vector<std::string> columns);
+  std::map<std::tuple<uint64_t>, RecordsBase> groupby(std::string column0);
+  std::map<std::tuple<uint64_t, uint64_t>, RecordsBase> groupby(
+    std::string column0,
+    std::string column1);
+  std::map<std::tuple<uint64_t, uint64_t, uint64_t>, RecordsBase> groupby(
+    std::string column0, std::string column1, std::string column2);
+
+  int get_idx(std::string column);
+  std::string get_column(int);
+
 
   RecordsBase merge(
     const RecordsBase & right_records,
@@ -108,8 +125,6 @@ public:
 
   std::shared_ptr<std::vector<RecordBase>> data_;
   std::shared_ptr<std::vector<std::string>> columns_;
-
-private:
 };
 
 #endif  // CARET_ANALYZE_CPP_IMPL__RECORD_HPP_

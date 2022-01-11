@@ -18,9 +18,14 @@
 #include <string>
 #include <limits>
 #include <utility>
+#include <functional>
 
+#include "caret_analyze_cpp_impl/column_manager.hpp"
 #include "caret_analyze_cpp_impl/record.hpp"
 
+RecordBase::RecordBase()
+{
+}
 
 RecordBase::RecordBase(std::unordered_map<std::string, uint64_t> init)
 {
@@ -29,49 +34,61 @@ RecordBase::RecordBase(std::unordered_map<std::string, uint64_t> init)
   }
 }
 
-RecordBase::RecordBase()
-{
-}
-
 RecordBase::RecordBase(const RecordBase & record)
-: data_(record.data_), columns_(record.columns_)
+: data_(record.data_)
 {
 }
 
 std::unordered_map<std::string, uint64_t> RecordBase::get_data() const
 {
-  return data_;
-}
+  auto & column_manager = ColumnManager::get_instance();
 
-uint64_t RecordBase::get(std::string key) const
-{
-  return data_.at(key);
-}
-
-uint64_t RecordBase::get_with_default(std::string key, uint64_t default_value) const
-{
-  if (data_.count(key) > 0) {
-    return data_.at(key);
+  std::unordered_map<std::string, uint64_t> data;
+  for (auto pair : data_) {
+    auto column = column_manager.get_column(pair.first);
+    data[column] = get(column);
   }
+  return data;
+}
+
+uint64_t RecordBase::get(std::string column) const
+{
+  auto & column_manager = ColumnManager::get_instance();
+  auto hash = column_manager.get_hash(column);
+  return data_.at(hash);
+}
+
+uint64_t RecordBase::get_with_default(std::string column, uint64_t default_value) const
+{
+  auto & column_manager = ColumnManager::get_instance();
+  auto hash = column_manager.get_hash(column);
+
+  if (data_.count(hash) > 0) {
+    return data_.at(hash);
+  }
+
   return default_value;
 }
 
 void RecordBase::change_dict_key(std::string key_from, std::string key_to)
 {
-  if (data_.count(key_from) == 0) {
+  auto & column_manager = ColumnManager::get_instance();
+  auto h_from = column_manager.get_hash(key_from);
+  auto h_to = column_manager.get_hash(key_to);
+
+  if (data_.count(h_from) == 0) {
     return;
   }
-  data_.insert(std::make_pair(key_to, data_[key_from]));
-  data_.erase(key_from);
-  columns_.erase(key_from);
-  columns_.insert(key_to);
+  data_.insert(std::make_pair(h_to, data_[h_from]));
+  data_.erase(h_from);
 }
 
-void RecordBase::drop_columns(std::vector<std::string> keys)
+void RecordBase::drop_columns(std::vector<std::string> columns)
 {
-  for (auto & key : keys) {
-    data_.erase(key);
-    columns_.erase(key);
+  auto & column_manager = ColumnManager::get_instance();
+  for (auto & column : columns) {
+    auto hash = column_manager.get_hash(column);
+    data_.erase(hash);
   }
 }
 
@@ -80,20 +97,37 @@ bool RecordBase::equals(const RecordBase & other) const
   return this->data_ == other.data_;
 }
 
-void RecordBase::add(std::string key, uint64_t stamp)
+void RecordBase::add(std::string column, uint64_t stamp)
 {
-  columns_.insert(key);
-  data_[key] = stamp;
+  auto & column_manager = ColumnManager::get_instance();
+  auto hash = column_manager.get_hash(column);
+  data_[hash] = stamp;
 }
 
 void RecordBase::merge(const RecordBase & other)
 {
+  auto & column_manager = ColumnManager::get_instance();
+
   for (auto & pair : other.data_) {
-    add(pair.first, pair.second);
+    auto column = column_manager.get_column(pair.first);
+    add(column, pair.second);
   }
+}
+
+bool RecordBase::has_column(const std::string column)
+{
+  auto & column_manager = ColumnManager::get_instance();
+  auto hash = column_manager.get_hash(column);
+  return data_.count(hash) > 0;
 }
 
 std::unordered_set<std::string> RecordBase::get_columns() const
 {
-  return columns_;
+  auto & column_manager = ColumnManager::get_instance();
+  std::unordered_set<std::string> columns;
+  for (auto pair : data_) {
+    auto key = column_manager.get_column(pair.first);
+    columns.emplace(key);
+  }
+  return columns;
 }

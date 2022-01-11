@@ -50,7 +50,7 @@ int main(int argc, char ** argvs)
 void print_records(const RecordsBase & records)
 {
   for (auto & record : *records.data_) {
-    for (auto & pair : record.data_) {
+    for (auto & pair : record.get_data()) {
       std::cout << pair.first << " " << pair.second << ", ";
     }
     std::cout << std::endl;

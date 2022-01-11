@@ -15,7 +15,10 @@
 #include <vector>
 #include <unordered_map>
 #include <string>
+#include <map>
+#include <tuple>
 
+#include "pybind11/iostream.h"
 #include "pybind11/pybind11.h"
 #include "pybind11/stl.h"
 #include "pybind11/functional.h"
@@ -42,15 +45,33 @@ PYBIND11_MODULE(record_cpp_impl, m) {
         return new RecordBase(init);
       })
   )
-  .def("change_dict_key", &RecordBase::change_dict_key)
-  .def("equals", &RecordBase::equals)
-  .def("merge", &RecordBase::merge)
-  .def("add", &RecordBase::add)
-  .def("drop_columns", &RecordBase::drop_columns)
-  .def("get", &RecordBase::get)
-  .def("get_with_default", &RecordBase::get_with_default)
-  .def_property_readonly("data", &RecordBase::get_data)
-  .def_property_readonly("columns", &RecordBase::get_columns);
+  .def(
+    "change_dict_key", &RecordBase::change_dict_key,
+    py::call_guard<py::scoped_ostream_redirect, py::scoped_estream_redirect>())
+  .def(
+    "equals", &RecordBase::equals,
+    py::call_guard<py::scoped_ostream_redirect, py::scoped_estream_redirect>())
+  .def(
+    "merge", &RecordBase::merge,
+    py::call_guard<py::scoped_ostream_redirect, py::scoped_estream_redirect>())
+  .def(
+    "add", &RecordBase::add,
+    py::call_guard<py::scoped_ostream_redirect, py::scoped_estream_redirect>())
+  .def(
+    "drop_columns", &RecordBase::drop_columns,
+    py::call_guard<py::scoped_ostream_redirect, py::scoped_estream_redirect>())
+  .def(
+    "get", &RecordBase::get,
+    py::call_guard<py::scoped_ostream_redirect, py::scoped_estream_redirect>())
+  .def(
+    "get_with_default", &RecordBase::get_with_default,
+    py::call_guard<py::scoped_ostream_redirect, py::scoped_estream_redirect>())
+  .def_property_readonly(
+    "data", &RecordBase::get_data,
+    py::call_guard<py::scoped_ostream_redirect, py::scoped_estream_redirect>())
+  .def_property_readonly(
+    "columns", &RecordBase::get_columns,
+    py::call_guard<py::scoped_ostream_redirect, py::scoped_estream_redirect>());
 
   py::class_<RecordsBase>(m, "RecordsBase")
   .def(py::init())
@@ -66,25 +87,73 @@ PYBIND11_MODULE(record_cpp_impl, m) {
         return new RecordsBase(init, columns);
       })
   )
-  .def("append", &RecordsBase::append)
-  .def("append_column", &RecordsBase::append_column)
-  .def("clone", &RecordsBase::clone)
-  .def("equals", &RecordsBase::equals)
-  .def("drop_columns", &RecordsBase::drop_columns)
-  .def("rename_columns", &RecordsBase::rename_columns)
-  .def("filter_if", &RecordsBase::filter_if)
-  .def("reindex", &RecordsBase::reindex)
-  .def("concat", &RecordsBase::concat)
-  .def("sort", &RecordsBase::sort)
-  .def("sort_column_order", &RecordsBase::sort_column_order)
-  .def("merge", &RecordsBase::merge)
-  .def("merge_sequencial", &RecordsBase::merge_sequencial)
-  .def("bind_drop_as_delay", &RecordsBase::bind_drop_as_delay)
+  .def(
+    "append", &RecordsBase::append,
+    py::call_guard<py::scoped_ostream_redirect, py::scoped_estream_redirect>())
+  .def(
+    "append_column", &RecordsBase::append_column,
+    py::call_guard<py::scoped_ostream_redirect, py::scoped_estream_redirect>())
+  .def(
+    "clone", &RecordsBase::clone,
+    py::call_guard<py::scoped_ostream_redirect, py::scoped_estream_redirect>())
+  .def(
+    "equals", &RecordsBase::equals,
+    py::call_guard<py::scoped_ostream_redirect, py::scoped_estream_redirect>())
+  .def(
+    "drop_columns", &RecordsBase::drop_columns,
+    py::call_guard<py::scoped_ostream_redirect, py::scoped_estream_redirect>())
+  .def(
+    "rename_columns", &RecordsBase::rename_columns,
+    py::call_guard<py::scoped_ostream_redirect, py::scoped_estream_redirect>())
+  .def(
+    "filter_if", &RecordsBase::filter_if,
+    py::call_guard<py::scoped_ostream_redirect, py::scoped_estream_redirect>())
+  .def(
+    "reindex", &RecordsBase::reindex,
+    py::call_guard<py::scoped_ostream_redirect, py::scoped_estream_redirect>())
+  .def(
+    "concat", &RecordsBase::concat,
+    py::call_guard<py::scoped_ostream_redirect, py::scoped_estream_redirect>())
+  .def(
+    "sort", &RecordsBase::sort,
+    py::call_guard<py::scoped_ostream_redirect, py::scoped_estream_redirect>())
+  .def(
+    "sort_column_order", &RecordsBase::sort_column_order,
+    py::call_guard<py::scoped_ostream_redirect, py::scoped_estream_redirect>())
+  .def(
+    "merge", &RecordsBase::merge,
+    py::call_guard<py::scoped_ostream_redirect, py::scoped_estream_redirect>())
+  .def(
+    "merge_sequencial", &RecordsBase::merge_sequencial,
+    py::call_guard<py::scoped_ostream_redirect, py::scoped_estream_redirect>())
+  .def(
+    "bind_drop_as_delay", &RecordsBase::bind_drop_as_delay,
+    py::call_guard<py::scoped_ostream_redirect, py::scoped_estream_redirect>())
   .def(
     "merge_sequencial_for_addr_track",
-    &RecordsBase::merge_sequencial_for_addr_track)
-  .def_property_readonly("data", &RecordsBase::get_data)
-  .def_property_readonly("columns", &RecordsBase::get_columns);
+    &RecordsBase::merge_sequencial_for_addr_track,
+    py::call_guard<py::scoped_ostream_redirect, py::scoped_estream_redirect>())
+  .def(
+    "groupby",
+    static_cast<std::map<std::tuple<uint64_t>,
+    RecordsBase>(RecordsBase::*)(std::string)>(&RecordsBase::groupby),
+    py::call_guard<py::scoped_ostream_redirect, py::scoped_estream_redirect>())
+  .def(
+    "groupby",
+    static_cast<std::map<std::tuple<uint64_t, uint64_t>,
+    RecordsBase>(RecordsBase::*)(std::string, std::string)>(&RecordsBase::groupby),
+    py::call_guard<py::scoped_ostream_redirect, py::scoped_estream_redirect>())
+  .def(
+    "groupby",
+    static_cast<std::map<std::tuple<uint64_t, uint64_t, uint64_t>,
+    RecordsBase>(RecordsBase::*)(std::string, std::string, std::string)>(&RecordsBase::groupby),
+    py::call_guard<py::scoped_ostream_redirect, py::scoped_estream_redirect>())
+  .def_property_readonly(
+    "data", &RecordsBase::get_data,
+    py::call_guard<py::scoped_ostream_redirect, py::scoped_estream_redirect>())
+  .def_property_readonly(
+    "columns", &RecordsBase::get_columns,
+    py::call_guard<py::scoped_ostream_redirect, py::scoped_estream_redirect>());
 
 #ifdef VERSION_INFO
   m.attr("__version__") = MACRO_STRINGIFY(VERSION_INFO);

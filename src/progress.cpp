@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <chrono>
 #include <memory>
 #include <string>
 
@@ -20,16 +21,42 @@
 
 Progress::~Progress()
 {
+  if (!progress_) {
+    return;
+  }
+  progress_->set_progress(max_progress_);
   progress_->mark_as_completed();
 }
 
 void Progress::tick()
 {
-  progress_->tick();
+  if (!progress_) {
+    return;
+  }
+
+  auto current = std::chrono::system_clock::now();
+  auto duration_ms = std::chrono::duration_cast<std::chrono::milliseconds>(current - last_).count();
+
+  if (duration_ms >= 1000.0 / print_freq_limit_) {
+    progress_->set_progress(progress_->current() + tick_count_);
+    last_ = current;
+    tick_count_ = 0;
+  } else {
+    tick_count_++;
+  }
 }
 
-Progress::Progress(std::size_t max_progress, std::string label)
+Progress::Progress(std::size_t max_progress, std::string label, float print_freq_limit)
+: max_progress_(max_progress),
+  tick_count_(0),
+  print_freq_limit_(print_freq_limit),
+  last_(std::chrono::system_clock::now()),
+  enable_(label != "")
 {
+  if (!enable_) {
+    return;
+  }
+
   progress_ = std::make_shared<indicators::ProgressSpinner>();
   progress_->set_option(indicators::option::PostfixText{label});
   progress_->set_option(indicators::option::MaxProgress{max_progress});

@@ -22,6 +22,7 @@
 #include <fstream>
 #include <algorithm>
 #include <set>
+#include <map>
 #include <memory>
 #include <tuple>
 #include <utility>
@@ -30,6 +31,7 @@
 
 #include "caret_analyze_cpp_impl/record.hpp"
 #include "caret_analyze_cpp_impl/common.hpp"
+#include "caret_analyze_cpp_impl/column_manager.hpp"
 #include "caret_analyze_cpp_impl/progress.hpp"
 
 enum Side {Left, Right};
@@ -60,10 +62,10 @@ private:
   std::vector<std::string> columns_;
 };
 
-RecordsBase::RecordsBase(std::vector<RecordBase> init, std::vector<std::string> columns)
+RecordsBase::RecordsBase(std::vector<RecordBase> records, std::vector<std::string> columns)
 : RecordsBase()
 {
-  for (auto & record : init) {
+  for (auto & record : records) {
     append(record);
   }
   for (auto & column : columns) {
@@ -78,9 +80,9 @@ RecordsBase::RecordsBase()
 }
 
 RecordsBase::RecordsBase(const RecordsBase & records)
+: data_(std::make_shared<std::vector<RecordBase>>(*records.data_)),
+  columns_(std::make_shared<std::vector<std::string>>(*records.columns_))
 {
-  data_ = std::make_shared<std::vector<RecordBase>>(*records.data_);
-  columns_ = std::make_shared<std::vector<std::string>>(*records.columns_);
 }
 
 RecordsBase::RecordsBase(std::string json_path)
@@ -103,19 +105,21 @@ RecordsBase::RecordsBase(std::string json_path)
 
 void RecordsBase::bind_drop_as_delay()
 {
+  auto & column_manager = ColumnManager::get_instance();
   sort_column_order(false, false);
 
-  std::unordered_map<std::string, uint64_t> oldest_values;
+  std::unordered_map<size_t, uint64_t> oldest_values;
 
   for (auto & record : *data_) {
     for (auto & key : *columns_) {
-      bool has_value = record.columns_.count(key) > 0;
-      bool has_value_ = oldest_values.count(key) > 0;
+      auto hash = column_manager.get_hash(key);
+      bool has_value = record.has_column(key);
+      bool has_value_ = oldest_values.count(hash) > 0;
       if (!has_value && has_value_) {
-        record.add(key, oldest_values[key]);
+        record.add(key, oldest_values[hash]);
       }
       if (has_value) {
-        oldest_values[key] = record.data_[key];
+        oldest_values[hash] = record.get(key);
       }
     }
   }
@@ -123,9 +127,19 @@ void RecordsBase::bind_drop_as_delay()
   sort_column_order(true, true);
 }
 
+int RecordsBase::get_idx(std::string column)
+{
+  std::unordered_map<std::string, int> column_name_to_idx;
+  for (size_t i = 0; i < columns_->size(); i++) {
+    auto column = (*columns_)[i];
+    column_name_to_idx[column] = i;
+  }
+  return column_name_to_idx[column];
+}
+
 void RecordsBase::append(const RecordBase & other)
 {
-  data_->push_back(other);
+  data_->emplace_back(other);
 }
 
 void RecordsBase::append_column(const std::string column, const std::vector<uint64_t> values)
@@ -136,6 +150,11 @@ void RecordsBase::append_column(const std::string column, const std::vector<uint
     auto & value = values[i];
     record.add(column, value);
   }
+}
+
+void RecordsBase::set_columns(const std::vector<std::string> columns)
+{
+  *columns_ = columns;
 }
 
 RecordsBase RecordsBase::clone()
@@ -399,7 +418,7 @@ RecordsBase RecordsBase::merge(
       join_key = join_right_key;
     }
 
-    auto has_valid_join_key = record.columns_.count(join_key) > 0;
+    auto has_valid_join_key = record.has_column(join_key);
     record.add(column_has_valid_join_key, has_valid_join_key);
 
     if (has_valid_join_key) {
@@ -523,19 +542,19 @@ RecordsBase RecordsBase::merge_sequencial(
     if (record.get(column_side) == Left) {
       record.add(
         column_has_valid_join_key,
-        join_left_key == "" || record.columns_.count(join_left_key) > 0
+        join_left_key == "" || record.has_column(join_left_key)
       );
     } else {
       record.add(
         column_has_valid_join_key,
-        join_right_key == "" || record.columns_.count(join_right_key) > 0
+        join_right_key == "" || record.has_column(join_right_key)
       );
     }
 
-    if (record.get(column_side) == Left && record.columns_.count(left_stamp_key) > 0) {
+    if (record.get(column_side) == Left && record.has_column(left_stamp_key)) {
       record.add(column_merge_stamp, record.get(left_stamp_key));
       record.add(column_has_merge_stamp, true);
-    } else if (record.get(column_side) == Right && record.columns_.count(right_stamp_key) > 0) {
+    } else if (record.get(column_side) == Right && record.has_column(right_stamp_key)) {
       record.add(column_merge_stamp, record.get(right_stamp_key));
       record.add(column_has_merge_stamp, true);
     } else {
@@ -553,10 +572,9 @@ RecordsBase RecordsBase::merge_sequencial(
       } else {
         join_key = join_right_key;
       }
-
       if (join_key == "") {
         return 0;
-      } else if (record.columns_.count(join_key) > 0) {
+      } else if (record.has_column(join_key)) {
         return record.get(join_key);
       } else {
         return UINT64_MAX;  // use as None
@@ -848,4 +866,63 @@ RecordsBase RecordsBase::merge_sequencial_for_addr_track(
     column_type, column_timestamp, sink_from_key, copy_from_key, copy_to_key, copy_stamp_key});
 
   return merged_records;
+}
+
+
+std::map<std::tuple<uint64_t>, RecordsBase> RecordsBase::groupby(std::string column0)
+{
+  std::map<std::tuple<uint64_t>, RecordsBase> map;
+
+  for (auto & record : *data_) {
+    auto key = std::make_tuple(
+      record.get_with_default(column0, UINT64_MAX)
+    );
+    if (map.count(key) == 0) {
+      map[key].set_columns(*columns_);
+    }
+    auto & records = map[key];
+    records.append(record);
+  }
+
+  return map;
+}
+
+std::map<std::tuple<uint64_t, uint64_t>, RecordsBase> RecordsBase::groupby(
+  std::string column0, std::string column1)
+{
+  std::map<std::tuple<uint64_t, uint64_t>, RecordsBase> map;
+
+  for (auto & record : *data_) {
+    auto key = std::make_tuple(
+      record.get_with_default(column0, UINT64_MAX),
+      record.get_with_default(column1, UINT64_MAX)
+    );
+    if (map.count(key) == 0) {
+      map[key].set_columns(*columns_);
+    }
+    auto & records = map[key];
+    records.append(record);
+  }
+
+  return map;
+}
+std::map<std::tuple<uint64_t, uint64_t, uint64_t>, RecordsBase> RecordsBase::groupby(
+  std::string column0, std::string column1, std::string column2)
+{
+  std::map<std::tuple<uint64_t, uint64_t, uint64_t>, RecordsBase> map;
+
+  for (auto & record : *data_) {
+    auto key = std::make_tuple(
+      record.get_with_default(column0, UINT64_MAX),
+      record.get_with_default(column1, UINT64_MAX),
+      record.get_with_default(column2, UINT64_MAX)
+    );
+    if (map.count(key) == 0) {
+      map[key].set_columns(*columns_);
+    }
+    auto & records = map[key];
+    records.append(record);
+  }
+
+  return map;
 }

@@ -22,12 +22,17 @@
 class Progress
 {
 public:
-  explicit Progress(std::size_t max_progress, std::string label = "");
+  explicit Progress(std::size_t max_progress, std::string label = "", float print_freq_limit = 10);
   ~Progress();
   void tick();
 
 private:
+  std::size_t max_progress_;
+  std::size_t tick_count_;
   std::shared_ptr<indicators::ProgressSpinner> progress_;
+  float print_freq_limit_;
+  std::chrono::system_clock::time_point last_;
+  bool enable_;
 };
 
 #endif  // CARET_ANALYZE_CPP_IMPL__PROGRESS_HPP_
