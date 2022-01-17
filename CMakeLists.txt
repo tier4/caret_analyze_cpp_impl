@@ -16,8 +16,13 @@ include_directories(
 )
 pybind11_add_module(record_cpp_impl
 src/pybind.cpp
-src/record_base.cpp
+src/record.cpp
 src/records_base.cpp
+src/records_vector_impl.cpp
+src/records_map_impl.cpp
+src/iterator_base.cpp
+src/iterator_vector_impl.cpp
+src/iterator_map_impl.cpp
 src/progress.cpp
 src/column_manager.cpp
 )
@@ -34,8 +39,13 @@ install(
 
 add_executable(merge_sample
 src/merge_sample.cpp
-src/record_base.cpp
+src/record.cpp
 src/records_base.cpp
+src/records_vector_impl.cpp
+src/records_map_impl.cpp
+src/iterator_base.cpp
+src/iterator_vector_impl.cpp
+src/iterator_map_impl.cpp
 src/progress.cpp
 src/column_manager.cpp
 )

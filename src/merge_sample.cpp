@@ -15,7 +15,7 @@
 #include <iostream>
 #include <string>
 
-#include "caret_analyze_cpp_impl/record.hpp"
+#include "caret_analyze_cpp_impl/records.hpp"
 
 void print_records(const RecordsBase & records);
 void run_merge(std::string how);
@@ -29,7 +29,7 @@ int main(int argc, char ** argvs)
 {
   (void) argc;
   (void) argvs;
-  // run_merge("inner");
+  run_merge("inner");
   // run_merge("left");
   // run_merge("right");
   // run_merge("outer");
@@ -41,16 +41,16 @@ int main(int argc, char ** argvs)
 
   // run_merge_sequencial_for_addr_track();
 
-//   run_merge_sequencial_with_key("inner");
-  run_merge_sequencial_without_key("inner");
+  // run_merge_sequencial_with_key("inner");
+  // run_merge_sequencial_without_key("inner");
   // run_merge_sequencial_with_loss("inner");
   return 0;
 }
 
 void print_records(const RecordsBase & records)
 {
-  for (auto & record : *records.data_) {
-    for (auto & pair : record.get_data()) {
+  for (auto & record : records.get_named_data()) {
+    for (auto & pair : record) {
       std::cout << pair.first << " " << pair.second << ", ";
     }
     std::cout << std::endl;
@@ -60,17 +60,31 @@ void print_records(const RecordsBase & records)
 
 void run_merge(std::string how)
 {
-  RecordsBase left_records;
-  auto & left_data = *left_records.data_;
-  left_data.emplace_back(RecordBase({{"stamp", 0}, {"value", 1}}));
-  left_data.emplace_back(RecordBase({{"stamp", 2}, {"value", 2}}));
-  left_data.emplace_back(RecordBase({{"stamp", 3}, {"value", 3}}));
+  // RecordsVectorImpl left_records;
+  // RecordsMapImpl left_records({"stamp"});
+  // left_records.append(Record({{"stamp", 0}, {"value", 1}}));
+  // left_records.append(Record({{"stamp", 2}, {"value", 2}}));
+  // left_records.append(Record({{"stamp", 3}, {"value", 3}}));
 
-  RecordsBase right_records;
-  auto & right_data = *right_records.data_;
-  right_data.emplace_back(RecordBase({{"stamp_", 4}, {"value", 2}}));
-  right_data.emplace_back(RecordBase({{"stamp_", 5}, {"value", 3}}));
-  right_data.emplace_back(RecordBase({{"stamp_", 6}, {"value", 4}}));
+
+
+  // RecordsVectorImpl right_records;
+  // right_records.append(Record({{"stamp_", 4}, {"value", 2}}));
+  // right_records.append(Record({{"stamp_", 5}, {"value", 3}}));
+  // right_records.append(Record({{"stamp_", 6}, {"value", 4}}));
+
+  RecordsMapImpl left_records({"stamp"});
+  left_records.append(Record({{"stamp", 1}, {"value", 10}}));
+  left_records.append(Record({{"stamp", 3}, {"value", 20}}));
+  left_records.append(Record({{"stamp", 5}, {"value", 30}}));
+  left_records.append(Record({{"stamp", 5}, {"value", 40}}));
+
+  RecordsVectorImpl right_records;
+  right_records.append(Record({{"stamp_", 2}, {"value", 10}}));
+  right_records.append(Record({{"stamp_", 4}, {"value", 20}}));
+  right_records.append(Record({{"stamp_", 6}, {"value", 30}}));
+  right_records.append(Record({{"stamp_", 6}, {"value", 30}}));
+  right_records.append(Record({{"stamp_", 10}, {"value", 50}}));
 
   auto merged_records = left_records.merge(
     right_records,
@@ -80,25 +94,23 @@ void run_merge(std::string how)
     how
   );
 
-  print_records(merged_records);
+  print_records(*merged_records);
 }
 
 
 void run_merge_with_drop(std::string how)
 {
-  RecordsBase left_records;
-  auto & left_data = *left_records.data_;
-  left_data.emplace_back(RecordBase({{"other_stamp", 4}, {"stamp", 1}, {"value", 1}}));
-  left_data.emplace_back(RecordBase({{"other_stamp", 8}}));
-  left_data.emplace_back(RecordBase({{"other_stamp", 12}, {"stamp", 9}, {"value", 2}}));
-  left_data.emplace_back(RecordBase({{"other_stamp", 16}}));
+  RecordsVectorImpl left_records;
+  left_records.append(Record({{"other_stamp", 4}, {"stamp", 1}, {"value", 1}}));
+  left_records.append(Record({{"other_stamp", 8}}));
+  left_records.append(Record({{"other_stamp", 12}, {"stamp", 9}, {"value", 2}}));
+  left_records.append(Record({{"other_stamp", 16}}));
 
-  RecordsBase right_records;
-  auto & right_data = *right_records.data_;
-  right_data.emplace_back(RecordBase({{"other_stamp_", 2}, {"stamp_", 3}, {"value", 2}}));
-  right_data.emplace_back(RecordBase({{"other_stamp_", 6}, {"stamp_", 7}, {"value", 1}}));
-  right_data.emplace_back(RecordBase({{"other_stamp_", 10}}));
-  right_data.emplace_back(RecordBase({{"other_stamp_", 14}}));
+  RecordsVectorImpl right_records;
+  right_records.append(Record({{"other_stamp_", 2}, {"stamp_", 3}, {"value", 2}}));
+  right_records.append(Record({{"other_stamp_", 6}, {"stamp_", 7}, {"value", 1}}));
+  right_records.append(Record({{"other_stamp_", 10}}));
+  right_records.append(Record({{"other_stamp_", 14}}));
 
   auto merged_records = left_records.merge(
     right_records,
@@ -108,29 +120,26 @@ void run_merge_with_drop(std::string how)
     how
   );
 
-  print_records(merged_records);
+  print_records(*merged_records);
 }
 
 void run_merge_sequencial_for_addr_track()
 {
-  RecordsBase source_records;
-  auto & source_data = *source_records.data_;
-  source_data.emplace_back(RecordBase({{"source_addr", 1}, {"source_stamp", 0}}));
-  source_data.emplace_back(RecordBase({{"source_addr", 1}, {"source_stamp", 10}}));
-  source_data.emplace_back(RecordBase({{"source_addr", 3}, {"source_stamp", 20}}));
+  RecordsVectorImpl source_records;
+  source_records.append(Record({{"source_addr", 1}, {"source_stamp", 0}}));
+  source_records.append(Record({{"source_addr", 1}, {"source_stamp", 10}}));
+  source_records.append(Record({{"source_addr", 3}, {"source_stamp", 20}}));
 
-  RecordsBase copy_records;
-  auto & copy_data = *copy_records.data_;
-  copy_data.emplace_back(RecordBase({{"addr_from", 1}, {"addr_to", 13}, {"copy_stamp", 1}}));
-  copy_data.emplace_back(RecordBase({{"addr_from", 1}, {"addr_to", 13}, {"copy_stamp", 11}}));
-  copy_data.emplace_back(RecordBase({{"addr_from", 3}, {"addr_to", 13}, {"copy_stamp", 21}}));
+  RecordsVectorImpl copy_records;
+  copy_records.append(Record({{"addr_from", 1}, {"addr_to", 13}, {"copy_stamp", 1}}));
+  copy_records.append(Record({{"addr_from", 1}, {"addr_to", 13}, {"copy_stamp", 11}}));
+  copy_records.append(Record({{"addr_from", 3}, {"addr_to", 13}, {"copy_stamp", 21}}));
 
-  RecordsBase sink_records;
-  auto & sink_data = *sink_records.data_;
-  sink_data.emplace_back(RecordBase({{"sink_addr", 13}, {"sink_stamp", 2}}));
-  sink_data.emplace_back(RecordBase({{"sink_addr", 1}, {"sink_stamp", 3}}));
-  sink_data.emplace_back(RecordBase({{"sink_addr", 13}, {"sink_stamp", 12}}));
-  sink_data.emplace_back(RecordBase({{"sink_addr", 13}, {"sink_stamp", 22}}));
+  RecordsVectorImpl sink_records;
+  sink_records.append(Record({{"sink_addr", 13}, {"sink_stamp", 2}}));
+  sink_records.append(Record({{"sink_addr", 1}, {"sink_stamp", 3}}));
+  sink_records.append(Record({{"sink_addr", 13}, {"sink_stamp", 12}}));
+  sink_records.append(Record({{"sink_addr", 13}, {"sink_stamp", 22}}));
 
   auto merged_records = source_records.merge_sequencial_for_addr_track(
     "source_stamp",
@@ -144,77 +153,71 @@ void run_merge_sequencial_for_addr_track()
     "sink_addr"
   );
 
-  print_records(merged_records);
+  print_records(*merged_records);
 }
 
 void run_merge_sequencial_with_key(std::string how)
 {
-  RecordsBase left_records;
-  auto & left_data = *left_records.data_;
-  left_data.emplace_back(RecordBase({{"key", 1}, {"stamp", 0}}));
-  left_data.emplace_back(RecordBase({{"key", 2}, {"stamp", 1}}));
-  left_data.emplace_back(RecordBase({{"key", 1}, {"stamp", 6}}));
-  left_data.emplace_back(RecordBase({{"key", 2}, {"stamp", 7}}));
+  RecordsVectorImpl left_records;
+  left_records.append(Record({{"key", 1}, {"stamp", 0}}));
+  left_records.append(Record({{"key", 2}, {"stamp", 1}}));
+  left_records.append(Record({{"key", 1}, {"stamp", 6}}));
+  left_records.append(Record({{"key", 2}, {"stamp", 7}}));
 
-  RecordsBase right_records;
-  auto & right_data = *right_records.data_;
-  right_data.emplace_back(RecordBase({{"key", 2}, {"sub_stamp", 2}}));
-  right_data.emplace_back(RecordBase({{"key", 1}, {"sub_stamp", 3}}));
-  right_data.emplace_back(RecordBase({{"key", 1}, {"sub_stamp", 4}}));
-  right_data.emplace_back(RecordBase({{"key", 2}, {"sub_stamp", 5}}));
+  RecordsVectorImpl right_records;
+  right_records.append(Record({{"key", 2}, {"sub_stamp", 2}}));
+  right_records.append(Record({{"key", 1}, {"sub_stamp", 3}}));
+  right_records.append(Record({{"key", 1}, {"sub_stamp", 4}}));
+  right_records.append(Record({{"key", 2}, {"sub_stamp", 5}}));
 
   auto merged_records = left_records.merge_sequencial(
     right_records, "stamp", "sub_stamp", "key",
     "key", {"key", "stamp", "sub_stamp"},
     how);
 
-  print_records(merged_records);
+  print_records(*merged_records);
 }
 
 void run_merge_sequencial_without_key(std::string how)
 {
-  RecordsBase left_records;
-  auto & left_data = *left_records.data_;
-  left_data.emplace_back(RecordBase({{"stamp", 0}}));
-  left_data.emplace_back(RecordBase({{"stamp", 3}}));
-  left_data.emplace_back(RecordBase({{"stamp", 4}}));
-  left_data.emplace_back(RecordBase({{"stamp", 5}}));
-  left_data.emplace_back(RecordBase({{"stamp", 8}}));
+  RecordsVectorImpl left_records;
+  left_records.append(Record({{"stamp", 0}}));
+  left_records.append(Record({{"stamp", 3}}));
+  left_records.append(Record({{"stamp", 4}}));
+  left_records.append(Record({{"stamp", 5}}));
+  left_records.append(Record({{"stamp", 8}}));
 
-  RecordsBase right_records;
-  auto & right_data = *right_records.data_;
-  right_data.emplace_back(RecordBase({{"sub_stamp", 1}}));
-  right_data.emplace_back(RecordBase({{"sub_stamp", 6}}));
-  right_data.emplace_back(RecordBase({{"sub_stamp", 7}}));
+  RecordsVectorImpl right_records;
+  right_records.append(Record({{"sub_stamp", 1}}));
+  right_records.append(Record({{"sub_stamp", 6}}));
+  right_records.append(Record({{"sub_stamp", 7}}));
 
   auto merged_records = left_records.merge_sequencial(
     right_records, "stamp", "sub_stamp",
     "", "", {"stamp", "sub_stamp"}, how);
 
-  print_records(merged_records);
+  print_records(*merged_records);
 }
 
 
 void run_merge_sequencial_with_loss(std::string how)
 {
-  RecordsBase left_records;
-  auto & left_data = *left_records.data_;
-  left_data.emplace_back(RecordBase({{"other_stamp", 4}, {"stamp", 1}, {"value", 1}}));
-  left_data.emplace_back(RecordBase({{"other_stamp", 8}}));
-  left_data.emplace_back(RecordBase({{"other_stamp", 12}, {"stamp", 9}, {"value", 1}}));
-  left_data.emplace_back(RecordBase({{"other_stamp", 16}}));
+  RecordsVectorImpl left_records;
+  left_records.append(Record({{"other_stamp", 4}, {"stamp", 1}, {"value", 1}}));
+  left_records.append(Record({{"other_stamp", 8}}));
+  left_records.append(Record({{"other_stamp", 12}, {"stamp", 9}, {"value", 1}}));
+  left_records.append(Record({{"other_stamp", 16}}));
 
-  RecordsBase right_records;
-  auto & right_data = *right_records.data_;
-  right_data.emplace_back(RecordBase({{"other_stamp_", 2}, {"stamp_", 3}, {"value", 1}}));
-  right_data.emplace_back(RecordBase({{"other_stamp_", 6}, {"stamp_", 7}, {"value", 1}}));
-  right_data.emplace_back(RecordBase({{"other_stamp_", 10}}));
-  right_data.emplace_back(RecordBase({{"other_stamp_", 14}}));
+  RecordsVectorImpl right_records;
+  right_records.append(Record({{"other_stamp_", 2}, {"stamp_", 3}, {"value", 1}}));
+  right_records.append(Record({{"other_stamp_", 6}, {"stamp_", 7}, {"value", 1}}));
+  right_records.append(Record({{"other_stamp_", 10}}));
+  right_records.append(Record({{"other_stamp_", 14}}));
 
   auto merged_records = left_records.merge_sequencial(
     right_records, "stamp", "sub_stamp", "value", "value",
     {"other_stamp", "stamp", "value", "other_stamp_"},
     how);
 
-  print_records(merged_records);
+  print_records(*merged_records);
 }

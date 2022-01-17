@@ -22,7 +22,7 @@
 #include "pybind11/pybind11.h"
 #include "pybind11/stl.h"
 #include "pybind11/functional.h"
-#include "caret_analyze_cpp_impl/record.hpp"
+#include "caret_analyze_cpp_impl/records.hpp"
 
 #define STRINGIFY(x) #x
 #define MACRO_STRINGIFY(x) STRINGIFY(x)
@@ -31,60 +31,60 @@
 namespace py = pybind11;
 
 PYBIND11_MODULE(record_cpp_impl, m) {
-  py::class_<RecordBase>(m, "RecordBase")
+  py::class_<Record>(m, "RecordBase")
   .def(py::init())
   .def(
     py::init(
-      [](const RecordBase & init) {
-        return new RecordBase(init);
+      [](const Record & init) {
+        return new Record(init);
       })
   )
   .def(
     py::init(
       [](std::unordered_map<std::string, uint64_t> init) {
-        return new RecordBase(init);
+        return new Record(init);
       })
   )
   .def(
-    "change_dict_key", &RecordBase::change_dict_key,
+    "change_dict_key", &Record::change_dict_key,
     py::call_guard<py::scoped_ostream_redirect, py::scoped_estream_redirect>())
   .def(
-    "equals", &RecordBase::equals,
+    "equals", &Record::equals,
     py::call_guard<py::scoped_ostream_redirect, py::scoped_estream_redirect>())
   .def(
-    "merge", &RecordBase::merge,
+    "merge", &Record::merge,
     py::call_guard<py::scoped_ostream_redirect, py::scoped_estream_redirect>())
   .def(
-    "add", &RecordBase::add,
+    "add", &Record::add,
     py::call_guard<py::scoped_ostream_redirect, py::scoped_estream_redirect>())
   .def(
-    "drop_columns", &RecordBase::drop_columns,
+    "drop_columns", &Record::drop_columns,
     py::call_guard<py::scoped_ostream_redirect, py::scoped_estream_redirect>())
   .def(
-    "get", &RecordBase::get,
+    "get", &Record::get,
     py::call_guard<py::scoped_ostream_redirect, py::scoped_estream_redirect>())
   .def(
-    "get_with_default", &RecordBase::get_with_default,
+    "get_with_default", &Record::get_with_default,
     py::call_guard<py::scoped_ostream_redirect, py::scoped_estream_redirect>())
   .def_property_readonly(
-    "data", &RecordBase::get_data,
+    "data", &Record::get_data,
     py::call_guard<py::scoped_ostream_redirect, py::scoped_estream_redirect>())
   .def_property_readonly(
-    "columns", &RecordBase::get_columns,
+    "columns", &Record::get_columns,
     py::call_guard<py::scoped_ostream_redirect, py::scoped_estream_redirect>());
 
   py::class_<RecordsBase>(m, "RecordsBase")
   .def(py::init())
   .def(
     py::init(
-      [](const RecordsBase & init) {
-        return new RecordsBase(init);
+      [](const RecordsVectorImpl & init) {
+        return new RecordsVectorImpl(init);
       })
   )
   .def(
     py::init(
-      [](std::vector<RecordBase> init, std::vector<std::string> columns) {
-        return new RecordsBase(init, columns);
+      [](std::vector<Record> init, std::vector<std::string> columns) {
+        return new RecordsVectorImpl(init, columns);
       })
   )
   .def(
@@ -136,17 +136,20 @@ PYBIND11_MODULE(record_cpp_impl, m) {
   .def(
     "groupby",
     static_cast<std::map<std::tuple<uint64_t>,
-    RecordsBase>(RecordsBase::*)(std::string)>(&RecordsBase::groupby),
+    std::unique_ptr<RecordsBase>>(RecordsBase::*)(std::string)>(&RecordsBase::groupby),
     py::call_guard<py::scoped_ostream_redirect, py::scoped_estream_redirect>())
   .def(
     "groupby",
     static_cast<std::map<std::tuple<uint64_t, uint64_t>,
-    RecordsBase>(RecordsBase::*)(std::string, std::string)>(&RecordsBase::groupby),
+    std::unique_ptr<RecordsBase>>(RecordsBase::*)(std::string, std::string)>(&RecordsBase::groupby),
     py::call_guard<py::scoped_ostream_redirect, py::scoped_estream_redirect>())
   .def(
     "groupby",
-    static_cast<std::map<std::tuple<uint64_t, uint64_t, uint64_t>,
-    RecordsBase>(RecordsBase::*)(std::string, std::string, std::string)>(&RecordsBase::groupby),
+    static_cast<
+      std::map<std::tuple<uint64_t, uint64_t, uint64_t>,
+      std::unique_ptr<RecordsBase>>(RecordsBase::*)(
+        std::string, std::string,
+        std::string)>(&RecordsBase::groupby),
     py::call_guard<py::scoped_ostream_redirect, py::scoped_estream_redirect>())
   .def_property_readonly(
     "data", &RecordsBase::get_data,
