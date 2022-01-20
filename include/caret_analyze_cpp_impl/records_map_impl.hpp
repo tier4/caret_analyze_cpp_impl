@@ -46,12 +46,16 @@ public:
     const std::vector<std::string> columns,
     const std::vector<std::string> key_columns);
 
-  ~RecordsMapImpl() = default;
+  RecordsMapImpl(const RecordsMapImpl & records);
+
+  ~RecordsMapImpl() override;
 
   using KeyT = std::tuple<std::uint64_t, uint64_t, uint64_t>;
   using DataT = std::multimap<KeyT, Record>;
   using Iterator = DataT::iterator;
+  using ConstIterator = DataT::const_iterator;
   using ReverseIterator = DataT::reverse_iterator;
+  using ConstReverseIterator = DataT::const_reverse_iterator;
 
   std::vector<Record> get_data() const override;
   void append(const Record & record) override;
@@ -64,15 +68,16 @@ public:
 
   std::size_t size() const override;
 
-  std::unique_ptr<IteratorBase> begin() const override;
-  std::unique_ptr<IteratorBase> rbegin() const override;
+  std::unique_ptr<IteratorBase> begin() override;
+  std::unique_ptr<ConstIteratorBase> cbegin() const override;
+  std::unique_ptr<IteratorBase> rbegin() override;
+  std::unique_ptr<ConstIteratorBase> crbegin() const override;
 
 private:
   KeyT make_key(const Record & record);
 
-  std::shared_ptr<DataT> data_;
+  std::unique_ptr<DataT> data_;
   std::vector<std::string> key_columns_;
-  std::shared_ptr<RecordsVectorImpl> vector_impl_data_;
 
   const size_t max_key_size_ = 3;
 };

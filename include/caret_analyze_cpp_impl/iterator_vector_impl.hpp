@@ -20,21 +20,49 @@
 class VectorIterator : public IteratorBase
 {
 public:
-  explicit VectorIterator(RecordsVectorImpl::Iterator it, RecordsVectorImpl::Iterator end);
-  explicit VectorIterator(RecordsVectorImpl::ReverseIterator it, RecordsVectorImpl::ReverseIterator end);
+  explicit VectorIterator(
+    RecordsVectorImpl::Iterator it,
+    RecordsVectorImpl::Iterator end);
+  explicit VectorIterator(
+    RecordsVectorImpl::ReverseIterator rit,
+    RecordsVectorImpl::ReverseIterator rend);
 
   Record & get_record() const override;
   bool has_next() const override;
   void next() override;
 
 private:
-
   bool is_forward_;
+
   RecordsVectorImpl::Iterator it_;
   RecordsVectorImpl::Iterator end_;
 
   RecordsVectorImpl::ReverseIterator rit_;
   RecordsVectorImpl::ReverseIterator rend_;
+};
+
+class VectorConstIterator : public ConstIteratorBase
+{
+public:
+  explicit VectorConstIterator(
+    RecordsVectorImpl::ConstIterator it,
+    RecordsVectorImpl::ConstIterator end);
+  explicit VectorConstIterator(
+    RecordsVectorImpl::ConstReverseIterator rit,
+    RecordsVectorImpl::ConstReverseIterator rend);
+
+  const Record & get_record() const override;
+  bool has_next() const override;
+  void next() override;
+
+private:
+  bool is_forward_;
+
+  RecordsVectorImpl::ConstIterator it_;
+  RecordsVectorImpl::ConstIterator end_;
+
+  RecordsVectorImpl::ConstReverseIterator rit_;
+  RecordsVectorImpl::ConstReverseIterator rend_;
 };
 
 #endif  // CARET_ANALYZE_CPP_IMPL__ITERATOR_IMPL_HPP_

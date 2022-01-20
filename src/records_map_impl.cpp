@@ -42,7 +42,7 @@ RecordsMapImpl::RecordsMapImpl(
   const std::vector<std::string> key_columns
 )
 : RecordsBase(columns),
-  data_(std::make_shared<DataT>()),
+  data_(std::make_unique<DataT>()),
   key_columns_(key_columns)
 {
   if (key_columns.size() > max_key_size_) {
@@ -54,10 +54,19 @@ RecordsMapImpl::RecordsMapImpl(
   }
 }
 
+RecordsMapImpl::~RecordsMapImpl()
+{
+}
+
 RecordsMapImpl::RecordsMapImpl(
   const std::vector<std::string> key_columns
 )
 : RecordsMapImpl({}, {}, key_columns)
+{
+}
+
+RecordsMapImpl::RecordsMapImpl(const RecordsMapImpl & records)
+: RecordsMapImpl(records, records.get_columns())
 {
 }
 
@@ -101,8 +110,7 @@ RecordsMapImpl::KeyT RecordsMapImpl::make_key(const Record & record)
 
 std::unique_ptr<RecordsBase> RecordsMapImpl::clone() const
 {
-  auto records = std::make_unique<RecordsMapImpl>(*this);
-  return records;
+  return std::make_unique<RecordsMapImpl>(*this);
 }
 
 
@@ -117,7 +125,7 @@ std::vector<Record> RecordsMapImpl::get_data() const
 
 void RecordsMapImpl::filter_if(const std::function<bool(Record)> & f)
 {
-  auto tmp = std::make_shared<DataT>();
+  auto tmp = std::make_unique<DataT>();
 
   for (auto it = begin(); it->has_next(); it->next()) {
     auto & record = it->get_record();
@@ -126,7 +134,7 @@ void RecordsMapImpl::filter_if(const std::function<bool(Record)> & f)
       tmp->insert(std::make_pair(key, record));
     }
   }
-  data_ = tmp;
+  data_ = std::move(tmp);
 }
 
 void RecordsMapImpl::sort(std::string key, std::string sub_key, bool ascending)
@@ -151,12 +159,21 @@ std::size_t RecordsMapImpl::size() const
   return data_->size();
 }
 
-std::unique_ptr<IteratorBase> RecordsMapImpl::begin() const
+std::unique_ptr<IteratorBase> RecordsMapImpl::begin()
 {
   return std::make_unique<MapIterator>(data_->begin(), data_->end());
 }
+std::unique_ptr<ConstIteratorBase> RecordsMapImpl::cbegin() const
+{
+  return std::make_unique<MapConstIterator>(data_->begin(), data_->end());
+}
 
-std::unique_ptr<IteratorBase> RecordsMapImpl::rbegin() const
+std::unique_ptr<IteratorBase> RecordsMapImpl::rbegin()
 {
   return std::make_unique<MapIterator>(data_->rbegin(), data_->rend());
+}
+
+std::unique_ptr<ConstIteratorBase> RecordsMapImpl::crbegin() const
+{
+  return std::make_unique<MapConstIterator>(data_->rbegin(), data_->rend());
 }

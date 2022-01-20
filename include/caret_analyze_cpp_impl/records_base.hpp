@@ -35,14 +35,18 @@ class RecordsBase
 {
 public:
   RecordsBase();
-  RecordsBase(const std::vector<std::string> columns);
+  explicit RecordsBase(const std::vector<std::string> columns);
+
+  virtual ~RecordsBase();
 
   virtual std::vector<Record> get_data() const;
   virtual std::vector<std::string> get_columns() const;
   virtual size_t size() const;
 
-  virtual std::unique_ptr<IteratorBase> begin() const;
-  virtual std::unique_ptr<IteratorBase> rbegin() const;
+  virtual std::unique_ptr<IteratorBase> begin();
+  virtual std::unique_ptr<ConstIteratorBase> cbegin() const;
+  virtual std::unique_ptr<IteratorBase> rbegin();
+  virtual std::unique_ptr<ConstIteratorBase> crbegin() const;
 
   virtual std::unique_ptr<RecordsBase> clone() const;
   void append_column(const std::string column, const std::vector<uint64_t> values);
@@ -53,7 +57,6 @@ public:
   void concat(RecordsBase & other);
   std::vector<std::unordered_map<std::string, uint64_t>> get_named_data() const;
 
-  // void append(const Record & other);
   void set_columns(const std::vector<std::string> columns);
   virtual bool equals(const RecordsBase & other) const;
   virtual void filter_if(const std::function<bool(Record)> & f);
@@ -108,7 +111,7 @@ public:
   );
 
 private:
-  std::shared_ptr<std::vector<std::string>> columns_;
+  std::vector<std::string> columns_;
 };
 
 #endif  // CARET_ANALYZE_CPP_IMPL__RECORDS_BASE_HPP_

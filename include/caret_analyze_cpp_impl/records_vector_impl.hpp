@@ -38,14 +38,17 @@ public:
   explicit RecordsVectorImpl(const RecordsVectorImpl & records);
   RecordsVectorImpl(std::vector<Record> records, std::vector<std::string> columns);
   explicit RecordsVectorImpl(std::vector<std::string> columns);
+  explicit RecordsVectorImpl(RecordsVectorImpl && records) = default;
 
   explicit RecordsVectorImpl(std::string json_path);
 
-  ~RecordsVectorImpl() = default;
+  ~RecordsVectorImpl() override;
 
   using DataT = std::vector<Record>;
   using Iterator = DataT::iterator;
+  using ConstIterator = DataT::const_iterator;
   using ReverseIterator = DataT::reverse_iterator;
+  using ConstReverseIterator = DataT::const_reverse_iterator;
 
   std::vector<Record> get_data() const override;
   void append(const Record & record) override;
@@ -58,11 +61,13 @@ public:
 
   std::size_t size() const override;
 
-  std::unique_ptr<IteratorBase> begin() const override;
-  std::unique_ptr<IteratorBase> rbegin() const override;
+  std::unique_ptr<IteratorBase> begin() override;
+  std::unique_ptr<ConstIteratorBase> cbegin() const override;
+  std::unique_ptr<IteratorBase> rbegin() override;
+  std::unique_ptr<ConstIteratorBase> crbegin() const override;
 
 private:
-  std::shared_ptr<DataT> data_;
+  std::unique_ptr<DataT> data_;
 };
 
 

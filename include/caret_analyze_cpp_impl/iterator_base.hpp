@@ -24,5 +24,13 @@ public:
   virtual bool has_next() const;
 };
 
+class ConstIteratorBase
+{
+public:
+  virtual const Record & get_record() const;
+  virtual void next();
+  virtual bool has_next() const;
+};
+
 #endif  // CARET_ANALYZE_CPP_IMPL__ITERATOR_BASE_HPP_
 #define CARET_ANALYZE_CPP_IMPL__ITERATOR_BASE_HPP_

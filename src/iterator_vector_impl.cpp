@@ -50,7 +50,7 @@ Record & VectorIterator::get_record() const
 {
   if (is_forward_) {
     return *it_;
-  } else{
+  } else {
     return *rit_;
   }
 }
@@ -59,8 +59,7 @@ void VectorIterator::next()
 {
   if (is_forward_) {
     it_++;
-  }
-  else {
+  } else {
     rit_++;
   }
 }
@@ -70,6 +69,47 @@ bool VectorIterator::has_next() const
   if (is_forward_) {
     return it_ != end_;
   } else {
-  return rit_ != rend_;
+    return rit_ != rend_;
+  }
+}
+
+VectorConstIterator::VectorConstIterator(
+  RecordsVectorImpl::ConstIterator it,
+  RecordsVectorImpl::ConstIterator end)
+: is_forward_(true), it_(it), end_(end)
+{
+}
+
+VectorConstIterator::VectorConstIterator(
+  RecordsVectorImpl::ConstReverseIterator rit,
+  RecordsVectorImpl::ConstReverseIterator rend)
+: is_forward_(false), rit_(rit), rend_(rend)
+{
+}
+
+const Record & VectorConstIterator::get_record() const
+{
+  if (is_forward_) {
+    return *it_;
+  } else {
+    return *rit_;
+  }
+}
+
+void VectorConstIterator::next()
+{
+  if (is_forward_) {
+    it_++;
+  } else {
+    rit_++;
+  }
+}
+
+bool VectorConstIterator::has_next() const
+{
+  if (is_forward_) {
+    return it_ != end_;
+  } else {
+    return rit_ != rend_;
   }
 }

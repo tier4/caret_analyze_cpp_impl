@@ -20,8 +20,11 @@
 class MapIterator : public IteratorBase
 {
 public:
-  explicit MapIterator(RecordsMapImpl::Iterator it, RecordsMapImpl::Iterator end);
-  explicit MapIterator(RecordsMapImpl::ReverseIterator it, RecordsMapImpl::ReverseIterator rend);
+  explicit MapIterator(
+    RecordsMapImpl::Iterator it, RecordsMapImpl::Iterator end
+  );
+  explicit MapIterator(
+    RecordsMapImpl::ReverseIterator it, RecordsMapImpl::ReverseIterator rend);
 
   Record & get_record() const override;
   bool has_next() const override;
@@ -32,8 +35,31 @@ private:
 
   RecordsMapImpl::Iterator it_;
   RecordsMapImpl::Iterator end_;
+
   RecordsMapImpl::ReverseIterator rit_;
   RecordsMapImpl::ReverseIterator rend_;
+};
+
+class MapConstIterator : public ConstIteratorBase
+{
+public:
+  explicit MapConstIterator(
+    RecordsMapImpl::ConstIterator it, RecordsMapImpl::ConstIterator end);
+  explicit MapConstIterator(
+    RecordsMapImpl::ConstReverseIterator it, RecordsMapImpl::ConstReverseIterator rend);
+
+  const Record & get_record() const override;
+  bool has_next() const override;
+  void next() override;
+
+private:
+  bool is_forward_;
+
+  RecordsMapImpl::ConstIterator it_;
+  RecordsMapImpl::ConstIterator end_;
+
+  RecordsMapImpl::ConstReverseIterator rit_;
+  RecordsMapImpl::ConstReverseIterator rend_;
 };
 
 #endif  // CARET_ANALYZE_CPP_IMPL__ITERATOR_MAP_IMPL_HPP_

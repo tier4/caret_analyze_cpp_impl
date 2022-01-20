@@ -65,14 +65,34 @@ private:
 
 
 RecordsBase::RecordsBase()
-: columns_(std::make_shared<std::vector<std::string>>())
+: columns_({})
 {
 }
 
 RecordsBase::RecordsBase(const std::vector<std::string> columns)
-: columns_(std::make_shared<std::vector<std::string>>(columns))
+: columns_(columns)
 {
 }
+
+RecordsBase::~RecordsBase()
+{
+}
+
+// RecordsBase::RecordsBase(const RecordsBase & records){
+//   throw std::exception();
+// }
+
+// RecordsBase& RecordsBase::operator=(const RecordsBase & records){
+//   throw std::exception();
+// }
+
+// RecordsBase& RecordsBase::operator=(RecordsBase && records){
+//   throw std::exception();
+// }
+
+// RecordsBase::RecordsBase(RecordsBase && records){
+//   // throw std::exception();
+// }
 
 std::unique_ptr<RecordsBase> RecordsBase::clone() const
 {
@@ -88,7 +108,7 @@ std::vector<Record> RecordsBase::get_data() const
 
 std::vector<std::string> RecordsBase::get_columns() const
 {
-  return *columns_;
+  return columns_;
 }
 
 
@@ -233,24 +253,24 @@ std::unique_ptr<RecordsBase> RecordsBase::merge(
     std::vector<uint64_t>(right_records_copy->size(), Right)
   );
 
-  auto asisgn_temporal_columns = [&](Record & record, std::string & join_key){
-    auto has_valid_join_key = record.has_column(join_key);
-    record.add(column_has_valid_join_key, has_valid_join_key);
+  auto asisgn_temporal_columns = [&](Record & record, std::string & join_key) {
+      auto has_valid_join_key = record.has_column(join_key);
+      record.add(column_has_valid_join_key, has_valid_join_key);
 
-    if (has_valid_join_key) {
-      record.add(column_merge_stamp, record.get(join_key));
-      record.add(column_join_key, record.get(join_key));
-    } else {
-      record.add(column_merge_stamp, UINT64_MAX);
-    }
-  };
+      if (has_valid_join_key) {
+        record.add(column_merge_stamp, record.get(join_key));
+        record.add(column_join_key, record.get(join_key));
+      } else {
+        record.add(column_merge_stamp, UINT64_MAX);
+      }
+    };
 
-  for(auto it = left_records_copy->begin() ; it->has_next(); it->next()) {
+  for (auto it = left_records_copy->begin(); it->has_next(); it->next()) {
     auto & record = it->get_record();
     asisgn_temporal_columns(record, join_left_key);
   }
 
-  for(auto it = right_records_copy->begin() ; it->has_next(); it->next()) {
+  for (auto it = right_records_copy->begin(); it->has_next(); it->next()) {
     auto & record = it->get_record();
     asisgn_temporal_columns(record, join_right_key);
   }
@@ -277,7 +297,7 @@ std::unique_ptr<RecordsBase> RecordsBase::merge(
 
   auto bar = Progress(concat_records.size(), progress_label);
   for (auto it = concat_records.begin(); it->has_next(); it->next()) {
-    auto &record = it->get_record();
+    auto & record = it->get_record();
     bar.tick();
     if (!record.get(column_has_valid_join_key)) {
       if (record.get(column_side) == Left && merge_left_record) {
@@ -366,28 +386,28 @@ std::unique_ptr<RecordsBase> RecordsBase::merge_sequencial(
   );
 
   auto assign_temporal_columns = [&](Record & record, std::string & join_key) {
-    record.add(
-      column_has_valid_join_key,
-      join_key == "" || record.has_column(join_key)
-    );
+      record.add(
+        column_has_valid_join_key,
+        join_key == "" || record.has_column(join_key)
+      );
 
-    if (record.get(column_side) == Left && record.has_column(left_stamp_key)) {
-      record.add(column_merge_stamp, record.get(left_stamp_key));
-      record.add(column_has_merge_stamp, true);
-    } else if (record.get(column_side) == Right && record.has_column(right_stamp_key)) {
-      record.add(column_merge_stamp, record.get(right_stamp_key));
-      record.add(column_has_merge_stamp, true);
-    } else {
-      record.add(column_merge_stamp, UINT64_MAX);
-      record.add(column_has_merge_stamp, false);
-    }
-  };
+      if (record.get(column_side) == Left && record.has_column(left_stamp_key)) {
+        record.add(column_merge_stamp, record.get(left_stamp_key));
+        record.add(column_has_merge_stamp, true);
+      } else if (record.get(column_side) == Right && record.has_column(right_stamp_key)) {
+        record.add(column_merge_stamp, record.get(right_stamp_key));
+        record.add(column_has_merge_stamp, true);
+      } else {
+        record.add(column_merge_stamp, UINT64_MAX);
+        record.add(column_has_merge_stamp, false);
+      }
+    };
 
-  for (auto it = left_records_copy->begin() ; it->has_next() ; it->next()) {
+  for (auto it = left_records_copy->begin(); it->has_next(); it->next()) {
     auto & record = it->get_record();
     assign_temporal_columns(record, join_left_key);
   }
-  for (auto it = right_records_copy->begin() ; it->has_next() ; it->next()) {
+  for (auto it = right_records_copy->begin(); it->has_next(); it->next()) {
     auto & record = it->get_record();
     assign_temporal_columns(record, join_right_key);
   }
@@ -424,17 +444,17 @@ std::unique_ptr<RecordsBase> RecordsBase::merge_sequencial(
 
 
   // std::unordered_map<int, uint64_t> sub_empty_records;
-  std::unordered_map<uint64_t, Record*> to_left_record_index;
-  std::unordered_map<Record*, std::vector<Record*>> to_sub_record_indices;
+  std::unordered_map<uint64_t, Record *> to_left_record_index;
+  std::unordered_map<Record *, std::vector<Record *>> to_sub_record_indices;
 
-  for (auto it=concat_records.begin(); it->has_next(); it->next()) {
-    auto &record = it->get_record();
+  for (auto it = concat_records.begin(); it->has_next(); it->next()) {
+    auto & record = it->get_record();
     if (!record.get(column_has_merge_stamp)) {
       continue;
     }
 
     if (record.get(column_side) == Left) {
-      to_sub_record_indices[&record] = std::vector<Record*>();
+      to_sub_record_indices[&record] = std::vector<Record *>();
 
       auto join_value = get_join_value(record);
       if (join_value == UINT64_MAX) {
@@ -450,7 +470,7 @@ std::unique_ptr<RecordsBase> RecordsBase::merge_sequencial(
       if (to_left_record_index.count(join_value) == 0) {
         continue;
       }
-      auto & left_record= *to_left_record_index[join_value];
+      auto & left_record = *to_left_record_index[join_value];
       to_sub_record_indices[&left_record].push_back(&record);
     }
   }
@@ -459,8 +479,8 @@ std::unique_ptr<RecordsBase> RecordsBase::merge_sequencial(
 
   std::size_t records_size = concat_records.size();
   auto bar = Progress(records_size, progress_label);
-  for(auto it =concat_records.begin(); it->has_next(); it->next()) {
-    auto &current_record = it->get_record();
+  for (auto it = concat_records.begin(); it->has_next(); it->next()) {
+    auto & current_record = it->get_record();
 
     bar.tick();
     bool is_recorded = added.count(&current_record) > 0;
@@ -499,7 +519,7 @@ std::unique_ptr<RecordsBase> RecordsBase::merge_sequencial(
     }
 
     for (uint64_t j = 0; j < sub_record_indices.size(); j++) {
-      auto &sub_record= *sub_record_indices[j];
+      auto & sub_record = *sub_record_indices[j];
       if (1 <= j && !bind_latest_left_record) {
         break;
       }
@@ -650,8 +670,8 @@ std::unique_ptr<RecordsBase> RecordsBase::merge_sequencial_for_addr_track(
 
 
   auto bar = Progress(concat_records.size(), progress_label);
-  for(auto it = concat_records.rbegin(); it->has_next() ; it->next()) {
-    auto &record = it->get_record();
+  for (auto it = concat_records.rbegin(); it->has_next(); it->next()) {
+    auto & record = it->get_record();
     record.get_columns();
     record.get_data();
     bar.tick();
@@ -717,19 +737,32 @@ std::unique_ptr<RecordsBase> RecordsBase::merge_sequencial_for_addr_track(
 
 std::size_t RecordsBase::size() const
 {
+  throw std::exception();
   return 0;
 }
 
-std::unique_ptr<IteratorBase> RecordsBase::begin() const
+std::unique_ptr<IteratorBase> RecordsBase::begin()
 {
   throw std::exception();
   return std::make_unique<IteratorBase>();
 }
 
-std::unique_ptr<IteratorBase> RecordsBase::rbegin() const
+std::unique_ptr<ConstIteratorBase> RecordsBase::cbegin() const
+{
+  throw std::exception();
+  return std::make_unique<ConstIteratorBase>();
+}
+
+std::unique_ptr<IteratorBase> RecordsBase::rbegin()
 {
   throw std::exception();
   return std::make_unique<IteratorBase>();
+}
+
+std::unique_ptr<ConstIteratorBase> RecordsBase::crbegin() const
+{
+  throw std::exception();
+  return std::make_unique<ConstIteratorBase>();
 }
 
 
@@ -739,7 +772,7 @@ void RecordsBase::append_column(const std::string column, const std::vector<uint
     throw std::exception();
   }
 
-  columns_->push_back(column);
+  columns_.push_back(column);
   auto it = begin();
   auto it_val = values.begin();
   for (; it->has_next(); it->next(), ++it_val) {
@@ -759,7 +792,7 @@ std::vector<std::unordered_map<std::string, uint64_t>> RecordsBase::get_named_da
 {
   std::vector<std::unordered_map<std::string, uint64_t>> data;
 
-  for (auto it = begin(); it->has_next(); it->next()) {
+  for (auto it = cbegin(); it->has_next(); it->next()) {
     auto & record = it->get_record();
     std::unordered_map<std::string, uint64_t> record_tmp;
     for (auto & column: record.get_columns()) {
@@ -778,8 +811,8 @@ bool RecordsBase::equals(const RecordsBase & other) const
     return false;
   }
 
-  auto it = begin();
-  auto it_other = other.begin();
+  auto it = cbegin();
+  auto it_other = other.cbegin();
   for (; it->has_next(); it->next(), it_other->next()) {
     auto record = it->get_record();
     auto other_record = it_other->get_record();
@@ -812,13 +845,13 @@ void RecordsBase::drop_columns(std::vector<std::string> column_names)
       return false;
     };
 
-  auto columns_tmp = *columns_;
-  columns_->clear();
+  auto columns_tmp = columns_;
+  columns_.clear();
   for (auto & column_tmp : columns_tmp) {
     if (has_key(column_tmp)) {
       continue;
     }
-    columns_->push_back(column_tmp);
+    columns_.push_back(column_tmp);
   }
 }
 
@@ -914,7 +947,7 @@ std::map<std::tuple<uint64_t, uint64_t, uint64_t>,
 
 void RecordsBase::set_columns(const std::vector<std::string> columns)
 {
-  *columns_ = columns;
+  columns_ = columns;
 }
 
 void RecordsBase::rename_columns(
@@ -927,7 +960,7 @@ void RecordsBase::rename_columns(
     }
   }
 
-  for (auto & column : *columns_) {
+  for (auto & column : columns_) {
     if (renames.count(column) > 0) {
       column = renames[column];
     }

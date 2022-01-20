@@ -44,21 +44,27 @@ RecordsVectorImpl::RecordsVectorImpl(std::vector<Record> records, std::vector<st
   }
 }
 
-RecordsVectorImpl::RecordsVectorImpl()
-: data_(std::make_shared<std::vector<Record>>())
+RecordsVectorImpl::RecordsVectorImpl(std::vector<std::string> columns)
+: RecordsBase(columns), data_(std::make_unique<DataT>())
 {
 }
 
-RecordsVectorImpl::RecordsVectorImpl(std::vector<std::string> columns)
-: RecordsBase(columns),
-  data_(std::make_shared<std::vector<Record>>())
+RecordsVectorImpl::RecordsVectorImpl()
+: RecordsVectorImpl(std::vector<std::string>())
 {
+}
+
+RecordsVectorImpl::~RecordsVectorImpl()
+{
+  data_->clear();
 }
 
 RecordsVectorImpl::RecordsVectorImpl(const RecordsVectorImpl & records)
-: RecordsBase(records.get_columns()),
-  data_(std::make_shared<std::vector<Record>>(*records.data_))
+: RecordsVectorImpl(records.get_columns())
 {
+  for (auto & record : records.get_data()) {
+    append(record);
+  }
 }
 
 RecordsVectorImpl::RecordsVectorImpl(std::string json_path)
@@ -110,8 +116,7 @@ void RecordsVectorImpl::append(const Record & other)
 
 std::unique_ptr<RecordsBase> RecordsVectorImpl::clone() const
 {
-  auto records = std::make_unique<RecordsVectorImpl>(*this);
-  return records;
+  return std::make_unique<RecordsVectorImpl>(*this);
 }
 
 
@@ -237,12 +242,22 @@ std::size_t RecordsVectorImpl::size() const
   return data_->size();
 }
 
-std::unique_ptr<IteratorBase> RecordsVectorImpl::begin() const
+std::unique_ptr<IteratorBase> RecordsVectorImpl::begin()
 {
   return std::make_unique<VectorIterator>(data_->begin(), data_->end());
 }
 
-std::unique_ptr<IteratorBase> RecordsVectorImpl::rbegin() const
+std::unique_ptr<ConstIteratorBase> RecordsVectorImpl::cbegin() const
+{
+  return std::make_unique<VectorConstIterator>(data_->begin(), data_->end());
+}
+
+std::unique_ptr<IteratorBase> RecordsVectorImpl::rbegin()
 {
   return std::make_unique<VectorIterator>(data_->rbegin(), data_->rend());
+}
+
+std::unique_ptr<ConstIteratorBase> RecordsVectorImpl::crbegin() const
+{
+  return std::make_unique<VectorConstIterator>(data_->rbegin(), data_->rend());
 }

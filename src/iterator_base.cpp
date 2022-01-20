@@ -33,15 +33,36 @@
 
 Record & IteratorBase::get_record() const
 {
+  throw std::exception();
   static Record record;
   return record;
 }
 
 void IteratorBase::next()
 {
+  throw std::exception();
 }
 
 bool IteratorBase::has_next() const
 {
+  throw std::exception();
+  return false;
+}
+
+const Record & ConstIteratorBase::get_record() const
+{
+  throw std::exception();
+  static Record record;
+  return record;
+}
+
+void ConstIteratorBase::next()
+{
+  throw std::exception();
+}
+
+bool ConstIteratorBase::has_next() const
+{
+  throw std::exception();
   return false;
 }

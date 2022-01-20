@@ -51,6 +51,7 @@ Record & MapIterator::get_record() const
   }
 }
 
+
 void MapIterator::next()
 {
   if (is_forward_) {
@@ -61,6 +62,48 @@ void MapIterator::next()
 }
 
 bool MapIterator::has_next() const
+{
+  if (is_forward_) {
+    return it_ != end_;
+  } else {
+    return rit_ != rend_;
+  }
+}
+
+MapConstIterator::MapConstIterator(
+  RecordsMapImpl::ConstIterator it,
+  RecordsMapImpl::ConstIterator end)
+: is_forward_(true), it_(it), end_(end)
+{
+}
+
+MapConstIterator::MapConstIterator(
+  RecordsMapImpl::ConstReverseIterator rit,
+  RecordsMapImpl::ConstReverseIterator rend)
+: is_forward_(false), rit_(rit), rend_(rend)
+{
+}
+
+const Record & MapConstIterator::get_record() const
+{
+  if (is_forward_) {
+    return (*it_).second;
+  } else {
+    return (*rit_).second;
+  }
+}
+
+
+void MapConstIterator::next()
+{
+  if (is_forward_) {
+    it_++;
+  } else {
+    rit_++;
+  }
+}
+
+bool MapConstIterator::has_next() const
 {
   if (is_forward_) {
     return it_ != end_;
