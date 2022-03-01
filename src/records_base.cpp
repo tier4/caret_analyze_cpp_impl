@@ -291,7 +291,8 @@ std::unique_ptr<RecordsBase> RecordsBase::merge(
   concat_records.concat(*right_records_copy);
 
   std::vector<Record *> empty_records;
-  Record * left_record_ = nullptr;
+  std::vector<Record *> left_records_;
+  std::set<uint64_t> processed_stamps;
 
   auto merged_records = std::make_unique<RecordsVectorImpl>(columns);
 
@@ -300,37 +301,44 @@ std::unique_ptr<RecordsBase> RecordsBase::merge(
     auto & record = it->get_record();
     bar.tick();
     if (!record.get(column_has_valid_join_key)) {
-      if (record.get(column_side) == Left && merge_left_record) {
-        merged_records->append(record);
-      } else if (record.get(column_side) == Right && merge_right_record) {
-        merged_records->append(record);
-      }
+      empty_records.push_back(&record);
       continue;
     }
 
     auto join_value = record.get(column_join_key);
+    if (processed_stamps.count(join_value) == 0) {
+      for (auto & left_record : left_records_) {
+        if (left_record->get(column_found_right_record) == false) {
+          empty_records.push_back(left_record);
+        }
+      }
+      left_records_.clear();
+      processed_stamps.emplace(join_value);
+    }
     if (record.get(column_side) == Left) {
-      if (left_record_ && !left_record_->get(column_found_right_record)) {
-        empty_records.push_back(left_record_);
-      }
-      left_record_ = &record;
-      left_record_->add(column_found_right_record, false);
-    } else {
-      if (left_record_ && join_value == left_record_->get(column_join_key) &&
-        record.get(column_has_valid_join_key))
-      {
-        left_record_->add(column_found_right_record, true);
-        auto merged_record = record;
-        merged_record.merge(*left_record_);
-        merged_records->append(merged_record);
-      } else {
-        empty_records.push_back(&record);
-      }
+      record.add(column_found_right_record, false);
+      left_records_.push_back(&record);
+      continue;
+    }
+
+    for (auto & left_record : left_records_) {
+      left_record->add(column_found_right_record, true);
+      auto merged_record = record;
+      merged_record.merge(*left_record);
+      merged_records->append(merged_record);
+    }
+
+    if (left_records_.size() == 0) {
+      empty_records.push_back(&record);
     }
   }
-  if (left_record_ && !left_record_->get(column_found_right_record)) {
-    empty_records.push_back(left_record_);
+
+  for (auto & left_record : left_records_) {
+    if (left_record->get(column_found_right_record) == false) {
+      empty_records.push_back(left_record);
+    }
   }
+
   for (auto & record_ptr : empty_records) {
     auto & record = *record_ptr;
     if (record.get(column_side) == Left && merge_left_record) {
