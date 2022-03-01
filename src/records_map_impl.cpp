@@ -117,7 +117,7 @@ std::unique_ptr<RecordsBase> RecordsMapImpl::clone() const
 std::vector<Record> RecordsMapImpl::get_data() const
 {
   std::vector<Record> data;
-  for (auto & record: *data_) {
+  for (auto & record : *data_) {
     data.push_back(record.second);
   }
   return data;

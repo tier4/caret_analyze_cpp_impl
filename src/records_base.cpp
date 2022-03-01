@@ -795,7 +795,7 @@ std::vector<std::unordered_map<std::string, uint64_t>> RecordsBase::get_named_da
   for (auto it = cbegin(); it->has_next(); it->next()) {
     auto & record = it->get_record();
     std::unordered_map<std::string, uint64_t> record_tmp;
-    for (auto & column: record.get_columns()) {
+    for (auto & column : record.get_columns()) {
       auto value = record.get(column);
       record_tmp[column] = value;
     }

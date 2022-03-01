@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef CARET_ANALYZE_CPP_IMPL__ITERATOR_IMPL_HPP_
+#ifndef CARET_ANALYZE_CPP_IMPL__ITERATOR_VECTOR_IMPL_HPP_
 
 #include "caret_analyze_cpp_impl/iterator_base.hpp"
 #include "caret_analyze_cpp_impl/records_vector_impl.hpp"
@@ -65,5 +65,5 @@ private:
   RecordsVectorImpl::ConstReverseIterator rend_;
 };
 
-#endif  // CARET_ANALYZE_CPP_IMPL__ITERATOR_IMPL_HPP_
-#define CARET_ANALYZE_CPP_IMPL__ITERATOR_IMPL_HPP_
+#endif  // CARET_ANALYZE_CPP_IMPL__ITERATOR_VECTOR_IMPL_HPP_
+#define CARET_ANALYZE_CPP_IMPL__ITERATOR_VECTOR_IMPL_HPP_

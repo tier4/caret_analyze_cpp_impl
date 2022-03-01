@@ -21,9 +21,9 @@
 #include <string>
 #include <functional>
 #include <memory>
-#include <map>
 #include <algorithm>
 #include <utility>
+#include <vector>
 #include <iterator>
 
 #include "caret_analyze_cpp_impl/column_manager.hpp"
