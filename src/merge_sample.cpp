@@ -140,6 +140,9 @@ void run_merge_sequencial_for_addr_track()
   sink_records.append(Record({{"sink_addr", 1}, {"sink_stamp", 3}}));
   sink_records.append(Record({{"sink_addr", 13}, {"sink_stamp", 12}}));
   sink_records.append(Record({{"sink_addr", 13}, {"sink_stamp", 22}}));
+  sink_records.append(Record({{"sink_addr", 3}, {"sink_stamp", 23}}));
+  sink_records.append(Record({{"sink_addr", 13}, {"sink_stamp", 24}}));
+  sink_records.append(Record({{"sink_addr", 3}, {"sink_stamp", 25}}));
 
   auto merged_records = source_records.merge_sequencial_for_addr_track(
     "source_stamp",

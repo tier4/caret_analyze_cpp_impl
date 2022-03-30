@@ -637,7 +637,7 @@ std::unique_ptr<RecordsBase> RecordsBase::merge_sequencial_for_addr_track(
   concat_records.concat(*copy_records_tmp);
   concat_records.concat(*sink_records_tmp);
 
-  std::vector<Record> processing_records;
+  std::unordered_map<uint64_t, Record *> processing_records;
   using StampSet = std::set<uint64_t>;
   std::unordered_map<uint64_t, std::shared_ptr<StampSet>> stamp_sets;
 
@@ -656,10 +656,11 @@ std::unique_ptr<RecordsBase> RecordsBase::merge_sequencial_for_addr_track(
           );
           return result->size() > 0 && sink_set.get() != processing_record_set.get();
         };
-      std::vector<Record> processing_records_ = filter(
-        processing_records, condition
-      );
-      for (auto & processing_record_ : processing_records_) {
+      for (auto & processing_record_pair_ : processing_records) {
+        auto & processing_record_ = *processing_record_pair_.second;
+        if (!condition(processing_record_)) {
+          continue;
+        }
         std::shared_ptr<StampSet> & processing_record_keys = stamp_sets[processing_record.get(
               column_timestamp)];
         std::shared_ptr<StampSet> & corresponding_record_keys =
@@ -686,9 +687,10 @@ std::unique_ptr<RecordsBase> RecordsBase::merge_sequencial_for_addr_track(
     if (record.get(column_type) == Sink) {
       auto timestamp = record.get(column_timestamp);
       auto stamp_set = std::make_shared<StampSet>();
-      stamp_set->insert(record.get(sink_from_key));
+      auto addr = record.get(sink_from_key);
+      stamp_set->insert(addr);
       stamp_sets.insert(std::make_pair(timestamp, stamp_set));
-      processing_records.emplace_back(record);
+      processing_records[addr] = &record;
     } else if (record.get(column_type) == Copy) {
       auto condition =
         [&stamp_sets, &copy_to_key, &record, &column_timestamp](const Record & x) {
@@ -697,9 +699,11 @@ std::unique_ptr<RecordsBase> RecordsBase::merge_sequencial_for_addr_track(
           bool has_same_source_addrs = stamp_set->count(record.get(copy_to_key)) > 0;
           return has_same_source_addrs;
         };
-      std::vector<Record> records_with_same_source_addrs =
-        filter(processing_records, condition);
-      for (auto & processing_record : records_with_same_source_addrs) {
+      for (auto & processing_record_pair : processing_records) {
+        auto & processing_record = *processing_record_pair.second;
+        if (!condition(processing_record)) {
+          continue;
+        }
         auto timestamp = processing_record.get(column_timestamp);
         std::shared_ptr<StampSet> stamp_set = stamp_sets[timestamp];
         stamp_set->insert(record.get(copy_from_key));
@@ -715,22 +719,22 @@ std::unique_ptr<RecordsBase> RecordsBase::merge_sequencial_for_addr_track(
           bool has_same_source_addrs = stamp_set->count(record.get(source_key)) > 0;
           return has_same_source_addrs;
         };
-      std::vector<Record> records_with_same_source_addrs =
-        filter(processing_records, condition);
-      for (auto & processing_record : records_with_same_source_addrs) {
-        // remove processing_record from processing_records
-        auto it = processing_records.begin();
-        while (it != processing_records.end()) {
-          auto & processing_record_ = *it;
-          if (processing_record.equals(processing_record_)) {
-            it = processing_records.erase(it);
-            break;
-          }
-          it++;
+      std::vector<uint64_t> merged_addrs;
+
+      for (auto & processing_record_pair : processing_records) {
+        auto & processing_record = *processing_record_pair.second;
+        if (!condition(processing_record)) {
+          continue;
         }
 
         processing_record.merge(record);
         merged_records->append(processing_record);
+        merged_addrs.emplace_back(processing_record.get(sink_from_key));
+      }
+      for (auto & merged_addr : merged_addrs) {
+        if (processing_records.count(merged_addr) > 0) {
+          processing_records.erase(merged_addr);
+        }
       }
     }
   }
