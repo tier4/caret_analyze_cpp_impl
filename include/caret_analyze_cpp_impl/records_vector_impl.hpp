@@ -55,8 +55,7 @@ public:
   std::unique_ptr<RecordsBase> clone() const override;
 
   void filter_if(const std::function<bool(Record)> & f) override;
-  void sort(std::string key, std::string sub_key = "", bool ascending = true);
-  void sort_column_order(bool ascending = true, bool put_none_at_top = true);
+  void sort(std::vector<std::string> keys, bool ascending = true);
   void bind_drop_as_delay();
 
   std::size_t size() const override;

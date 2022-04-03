@@ -88,7 +88,7 @@ RecordsVectorImpl::RecordsVectorImpl(std::string json_path)
 void RecordsVectorImpl::bind_drop_as_delay()
 {
   auto & column_manager = ColumnManager::get_instance();
-  sort_column_order(false, false);
+  sort(get_columns(), false);
 
   std::unordered_map<size_t, uint64_t> oldest_values;
 
@@ -106,7 +106,7 @@ void RecordsVectorImpl::bind_drop_as_delay()
     }
   }
 
-  sort_column_order(true, true);
+  sort(get_columns(), true);
 }
 
 void RecordsVectorImpl::append(const Record & other)
@@ -141,35 +141,38 @@ void RecordsVectorImpl::filter_if(const std::function<bool(Record)> & f)
 class RecordComp
 {
 public:
-  RecordComp(std::string key, std::string sub_key, bool ascending)
-  : key_(key), sub_key_(sub_key), ascending_(ascending)
+  RecordComp(std::vector<std::string> keys, bool ascending)
+  : keys_(keys), ascending_(ascending)
   {
   }
 
   bool operator()(const Record & a, const Record & b) const noexcept
   {
     if (ascending_) {
-      if (a.get(key_) != b.get(key_) || sub_key_ == "") {
-        return a.get(key_) < b.get(key_);
+      for (const std::string & key_ : keys_) {
+        if (a.has_column(key_) && b.has_column(key_) && a.get(key_) != b.get(key_)) {
+          return a.get(key_) < b.get(key_);
+        }
       }
-      return a.get(sub_key_) < b.get(sub_key_);
+      return 0;
     } else {
-      if (a.get(key_) != b.get(key_) || sub_key_ == "") {
-        return a.get(key_) > b.get(key_);
+      for (const std::string & key_ : keys_) {
+        if (a.has_column(key_) && b.has_column(key_) && a.get(key_) != b.get(key_)) {
+          return a.get(key_) > b.get(key_);
+        }
       }
-      return a.get(sub_key_) > b.get(sub_key_);
+      return UINT64_MAX;
     }
   }
 
 private:
-  std::string key_;
-  std::string sub_key_;
+  std::vector<std::string> keys_;
   bool ascending_;
 };
 
-void RecordsVectorImpl::sort(std::string key, std::string sub_key, bool ascending)
+void RecordsVectorImpl::sort(std::vector<std::string> keys, bool ascending)
 {
-  std::sort(data_->begin(), data_->end(), RecordComp{key, sub_key, ascending});
+  std::sort(data_->begin(), data_->end(), RecordComp{keys, ascending});
 }
 
 class RecordCompColumnOrder
@@ -229,13 +232,6 @@ private:
   bool ascending_;
   uint64_t default_value_;
 };
-
-void RecordsVectorImpl::sort_column_order(bool ascending, bool put_none_at_top)
-{
-  std::sort(
-    data_->begin(),
-    data_->end(), RecordCompColumnOrder{get_columns(), ascending, put_none_at_top});
-}
 
 std::size_t RecordsVectorImpl::size() const
 {

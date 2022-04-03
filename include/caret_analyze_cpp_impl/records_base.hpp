@@ -58,10 +58,11 @@ public:
   std::vector<std::unordered_map<std::string, uint64_t>> get_named_data() const;
 
   void set_columns(const std::vector<std::string> columns);
+
+  bool has_column(const std::string column) const;
   virtual bool equals(const RecordsBase & other) const;
   virtual void filter_if(const std::function<bool(Record)> & f);
-  virtual void sort(std::string key, std::string sub_key = "", bool ascending = true);
-  virtual void sort_column_order(bool ascending = true, bool put_none_at_top = true);
+  virtual void sort(std::vector<std::string> keys, bool ascending = true);
   virtual void bind_drop_as_delay();
 
   void reindex(std::vector<std::string> columns);
@@ -112,6 +113,7 @@ public:
 
 private:
   std::vector<std::string> columns_;
+  std::unordered_set<std::string> columns_set_;
 };
 
 #endif  // CARET_ANALYZE_CPP_IMPL__RECORDS_BASE_HPP_

@@ -72,6 +72,9 @@ RecordsBase::RecordsBase()
 RecordsBase::RecordsBase(const std::vector<std::string> columns)
 : columns_(columns)
 {
+  for (auto & column : columns_) {
+    columns_set_.emplace(column);
+  }
 }
 
 RecordsBase::~RecordsBase()
@@ -93,6 +96,11 @@ RecordsBase::~RecordsBase()
 // RecordsBase::RecordsBase(RecordsBase && records){
 //   // throw std::exception();
 // }
+
+bool RecordsBase::has_column(const std::string column) const
+{
+  return columns_set_.count(column) > 0;
+}
 
 std::unique_ptr<RecordsBase> RecordsBase::clone() const
 {
@@ -792,6 +800,7 @@ void RecordsBase::append_column(const std::string column, const std::vector<uint
     auto & value = *it_val;
     record.add(column, value);
   }
+  columns_set_.emplace(column);
 }
 
 void RecordsBase::append(const Record & record)
@@ -864,6 +873,7 @@ void RecordsBase::drop_columns(std::vector<std::string> column_names)
       continue;
     }
     columns_.push_back(column_tmp);
+    columns_set_.erase(column_tmp);
   }
 }
 
@@ -873,18 +883,10 @@ void RecordsBase::filter_if(const std::function<bool(Record)> & f)
   throw std::exception();
 }
 
-void RecordsBase::sort(std::string key, std::string sub_key, bool ascending)
+void RecordsBase::sort(std::vector<std::string> keys, bool ascending)
 {
-  (void) key;
-  (void) sub_key;
+  (void) keys;
   (void) ascending;
-  throw std::exception();
-}
-
-void RecordsBase::sort_column_order(bool ascending, bool put_none_at_top)
-{
-  (void) ascending;
-  (void) put_none_at_top;
   throw std::exception();
 }
 
@@ -960,6 +962,10 @@ std::map<std::tuple<uint64_t, uint64_t, uint64_t>,
 void RecordsBase::set_columns(const std::vector<std::string> columns)
 {
   columns_ = columns;
+  columns_set_.clear();
+  for (auto & column : columns) {
+    columns_set_.insert(column);
+  }
 }
 
 void RecordsBase::rename_columns(
@@ -974,6 +980,8 @@ void RecordsBase::rename_columns(
 
   for (auto & column : columns_) {
     if (renames.count(column) > 0) {
+      columns_set_.erase(column);
+      columns_set_.insert(renames[column]);
       column = renames[column];
     }
   }

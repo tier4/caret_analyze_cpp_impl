@@ -114,8 +114,8 @@ void run_merge_with_drop(std::string how)
 
   auto merged_records = left_records.merge(
     right_records,
-    "value",
-    "value",
+    {"value"},
+    {"value"},
     {"other_stamp", "stamp", "value", "other_stamp_", "stamp_"},
     how
   );

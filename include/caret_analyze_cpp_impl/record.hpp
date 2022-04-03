@@ -47,7 +47,7 @@ public:
   uint64_t get_with_default(std::string column, uint64_t default_value) const;
   void add(std::string column, uint64_t stamp);
   void drop_columns(std::vector<std::string> columns);
-  bool has_column(const std::string column);
+  bool has_column(const std::string column) const;
 
 private:
   std::unordered_map<size_t, uint64_t> data_;

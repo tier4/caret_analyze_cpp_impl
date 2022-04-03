@@ -119,9 +119,6 @@ PYBIND11_MODULE(record_cpp_impl, m) {
     "sort", &RecordsBase::sort,
     py::call_guard<py::scoped_ostream_redirect, py::scoped_estream_redirect>())
   .def(
-    "sort_column_order", &RecordsBase::sort_column_order,
-    py::call_guard<py::scoped_ostream_redirect, py::scoped_estream_redirect>())
-  .def(
     "merge", &RecordsBase::merge,
     py::call_guard<py::scoped_ostream_redirect, py::scoped_estream_redirect>())
   .def(

@@ -114,7 +114,7 @@ void Record::merge(const Record & other)
   }
 }
 
-bool Record::has_column(const std::string column)
+bool Record::has_column(const std::string column) const
 {
   auto & column_manager = ColumnManager::get_instance();
   auto hash = column_manager.get_hash(column);
