@@ -24,12 +24,15 @@ void run_merge_sequencial_for_addr_track();
 void run_merge_sequencial_with_key(std::string how);
 void run_merge_sequencial_with_loss(std::string how);
 void run_merge_sequencial_without_key(std::string how);
+void run_sort_columns();
+void run_map();
 
 int main(int argc, char ** argvs)
 {
   (void) argc;
   (void) argvs;
-  run_merge("inner");
+  // run_merge("inner");
+  // run_map();
   // run_merge("left");
   // run_merge("right");
   // run_merge("outer");
@@ -41,9 +44,11 @@ int main(int argc, char ** argvs)
 
   // run_merge_sequencial_for_addr_track();
 
+  // run_sort_columns();
+
   // run_merge_sequencial_with_key("inner");
   // run_merge_sequencial_without_key("inner");
-  // run_merge_sequencial_with_loss("inner");
+  run_merge_sequencial_with_loss("outer");
   return 0;
 }
 
@@ -67,17 +72,19 @@ void run_merge(std::string how)
   // left_records.append(Record({{"stamp", 3}, {"value", 3}}));
 
 
-
   // RecordsVectorImpl right_records;
   // right_records.append(Record({{"stamp_", 4}, {"value", 2}}));
   // right_records.append(Record({{"stamp_", 5}, {"value", 3}}));
   // right_records.append(Record({{"stamp_", 6}, {"value", 4}}));
 
-  RecordsMapImpl left_records({"stamp"});
+  // RecordsMapImpl left_records({"stamp"});
+  RecordsVectorImpl left_records;
   left_records.append(Record({{"stamp", 1}, {"value", 10}}));
   left_records.append(Record({{"stamp", 3}, {"value", 20}}));
   left_records.append(Record({{"stamp", 5}, {"value", 30}}));
-  left_records.append(Record({{"stamp", 5}, {"value", 40}}));
+  left_records.append(Record({{"stamp", 7}, {"value", 40}}));
+  left_records.append(Record({{"stamp", 9}, {"value", 70}}));
+  left_records.append(Record({{"stamp", 10}, {"value", 70}}));
 
   RecordsVectorImpl right_records;
   right_records.append(Record({{"stamp_", 2}, {"value", 10}}));
@@ -85,11 +92,12 @@ void run_merge(std::string how)
   right_records.append(Record({{"stamp_", 6}, {"value", 30}}));
   right_records.append(Record({{"stamp_", 6}, {"value", 30}}));
   right_records.append(Record({{"stamp_", 10}, {"value", 50}}));
+  right_records.append(Record({{"stamp_", 11}, {"value", 70}}));
 
   auto merged_records = left_records.merge(
     right_records,
-    "value",
-    "value",
+    {"value"},
+    {"value"},
     {"stamp", "value", "stamp"},
     how
   );
@@ -121,6 +129,66 @@ void run_merge_with_drop(std::string how)
   );
 
   print_records(*merged_records);
+}
+
+void run_sort_columns()
+{
+  auto key = "stamp";
+  auto key_ = "stamp_";
+  auto key__ = "stamp__";
+  RecordsVectorImpl records({key, key_, key__});
+
+  records.append(Record({{key, 2}, {key_, 2}, {key__, 6}}));
+  records.append(Record({{key, 2}, {key_, 2}}));
+  records.append(Record({{key, 1}, {key__, 5}}));
+  records.append(Record({{key, 2}, {key_, 1}, {key__, 5}}));
+  records.append(Record({{key, 0}, {key_, 5}, {key__, 5}}));
+  records.append(Record({{key, 1}}));
+
+  records.sort(records.get_columns());
+
+  print_records(records);
+}
+
+void run_map()
+{
+  auto key = "value";
+  auto key_ = "value_";
+  auto key__ = "value__";
+  auto make_key = [&key, &key_, &key__](const Record & r) -> Key {
+      Key keys;
+      keys.add_key(r.get_with_default(key, UINT64_MAX));
+      // keys.add_key( r.get_with_default(key_, UINT64_MAX));
+      // keys.add_key( r.get_with_default(key__, UINT64_MAX));
+      keys.add_key(r.get_with_default("side", UINT64_MAX));
+      return keys;
+    };
+
+  RecordsMapImpl records({key, key_, key__}, make_key);
+
+  // records.append(Record({{key, 2}, {key_, 2}, {key__, 6} }));
+  // records.append(Record({{key, 2}, {key_, 2} }));
+  // records.append(Record({{key, 1}, {key__, 5} }));
+  // records.append(Record({{key, 2}, {key_, 1}, {key__, 5} }));
+  // records.append(Record({{key, 0}, {key_, 5}, {key__, 5} }));
+  // records.append(Record({{key, 1}}));
+  // records.append(Record());
+
+  records.append(Record({{"stamp", 1}, {key, 10}, {"side", 0}}));
+  records.append(Record({{"stamp", 3}, {key, 20}, {"side", 0}}));
+  records.append(Record({{"stamp", 5}, {key, 30}, {"side", 0}}));
+  records.append(Record({{"stamp", 7}, {key, 40}, {"side", 0}}));
+  records.append(Record({{"stamp", 9}, {key, 70}, {"side", 0}}));
+  records.append(Record({{"stamp", 10}, {key, 70}, {"side", 0}}));
+
+  records.append(Record({{"stamp_", 2}, {key, 10}, {"side", 1}}));
+  records.append(Record({{"stamp_", 4}, {key, 20}, {"side", 1}}));
+  records.append(Record({{"stamp_", 6}, {key, 30}, {"side", 1}}));
+  records.append(Record({{"stamp_", 6}, {key, 30}, {"side", 1}}));
+  records.append(Record({{"stamp_", 10}, {key, 50}, {"side", 1}}));
+  records.append(Record({{"stamp_", 11}, {key, 70}, {"side", 1}}));
+
+  print_records(records);
 }
 
 void run_merge_sequencial_for_addr_track()
@@ -218,7 +286,7 @@ void run_merge_sequencial_with_loss(std::string how)
   right_records.append(Record({{"other_stamp_", 14}}));
 
   auto merged_records = left_records.merge_sequencial(
-    right_records, "stamp", "sub_stamp", "value", "value",
+    right_records, "stamp", "stamp_", "value", "value",
     {"other_stamp", "stamp", "value", "other_stamp_"},
     how);
 

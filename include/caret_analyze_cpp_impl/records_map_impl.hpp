@@ -30,40 +30,111 @@
 #include "caret_analyze_cpp_impl/iterator_base.hpp"
 #include "caret_analyze_cpp_impl/records_base.hpp"
 
+class Key
+{
+public:
+  void add_key(uint64_t key)
+  {
+    keys_.emplace_back(key);
+  }
+
+  bool operator==(const Key & other) const
+  {
+    if (keys_.size() != other.keys_.size()) {
+      return false;
+    }
+    for (size_t i = 0; i < keys_.size(); i++) {
+      if (keys_[i] != other.keys_[i]) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  bool operator<(const Key & other) const
+  {
+    for (size_t i = 0; i < keys_.size(); i++) {
+      if (keys_.size() < i + 1) {
+        return true;
+      }
+      if (other.keys_.size() < i + 1) {
+        return true;
+      }
+
+      if (keys_[i] < other.keys_[i]) {
+        return true;
+      } else if (keys_[i] > other.keys_[i]) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+
+  size_t get_hash() const
+  {
+    size_t hash_value = 17;
+    for (auto & key_val : keys_) {
+      hash_value += hash_value * 31 + std::hash<uint64_t>()(key_val);
+    }
+    return hash_value;
+  }
+
+  struct Hash
+  {
+    size_t operator()(const Key & keys) const
+    {
+      return keys.get_hash();
+    }
+  };
+
+private:
+  std::vector<uint64_t> keys_;
+};
 
 class RecordsMapImpl : public RecordsBase
 {
 public:
-  explicit RecordsMapImpl(const std::vector<std::string> key_columns);
-  explicit RecordsMapImpl(
-    const RecordsMapImpl & records,
-    const std::vector<std::string> key_columns);
-  RecordsMapImpl(
-    std::vector<Record> records,
-    const std::vector<std::string> columns,
-    const std::vector<std::string> key_columns);
-  explicit RecordsMapImpl(
-    const std::vector<std::string> columns,
-    const std::vector<std::string> key_columns);
-
-  RecordsMapImpl(const RecordsMapImpl & records);
-
-  ~RecordsMapImpl() override;
-
-  using KeyT = std::tuple<std::uint64_t, uint64_t, uint64_t>;
-  using DataT = std::multimap<KeyT, Record>;
+  using DataT = std::multimap<Key, Record>;
   using Iterator = DataT::iterator;
   using ConstIterator = DataT::const_iterator;
   using ReverseIterator = DataT::reverse_iterator;
   using ConstReverseIterator = DataT::const_reverse_iterator;
+
+  explicit RecordsMapImpl(
+    const std::vector<std::string> key_columns,
+    std::function<Key(const Record &)> make_key
+  );
+  explicit RecordsMapImpl(
+    const RecordsMapImpl & records,
+    const std::vector<std::string> key_columns,
+    std::function<Key(const Record &)> make_key
+  );
+  explicit RecordsMapImpl(
+    std::vector<Record> records,
+    const std::vector<std::string> columns,
+    const std::vector<std::string> key_columns,
+    std::function<Key(const Record &)> make_key
+  );
+  explicit RecordsMapImpl(
+    const std::vector<std::string> columns,
+    const std::vector<std::string> key_columns,
+    std::function<Key(const Record &)> make_key
+  );
+
+  RecordsMapImpl(
+    const RecordsMapImpl & records,
+    std::function<Key(const Record &)> make_key
+  );
+
+  ~RecordsMapImpl() override;
 
   std::vector<Record> get_data() const override;
   void append(const Record & record) override;
   std::unique_ptr<RecordsBase> clone() const override;
 
   void filter_if(const std::function<bool(Record)> & f);
-  void sort(std::string key, std::string sub_key = "", bool ascending = true);
-  void sort_column_order(bool ascending = true, bool put_none_at_top = true);
+  void sort(std::vector<std::string> keys, bool ascending = true);
   void bind_drop_as_delay();
 
   std::size_t size() const override;
@@ -74,11 +145,10 @@ public:
   std::unique_ptr<ConstIteratorBase> crbegin() const override;
 
 private:
-  KeyT make_key(const Record & record);
-
   std::unique_ptr<DataT> data_;
   std::vector<std::string> key_columns_;
 
+  std::function<Key(const Record &)> make_key_;
   const size_t max_key_size_ = 3;
 };
 

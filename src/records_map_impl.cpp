@@ -39,11 +39,17 @@
 RecordsMapImpl::RecordsMapImpl(
   std::vector<Record> records,
   const std::vector<std::string> columns,
-  const std::vector<std::string> key_columns
+  const std::vector<std::string> key_columns,
+  std::function<Key(const Record &)> make_key
 )
 : RecordsBase(columns),
   data_(std::make_unique<DataT>()),
-  key_columns_(key_columns)
+  key_columns_(key_columns),
+  make_key_([this, make_key](const Record & record) {
+      auto key = make_key(record);
+      key.add_key(this->size());
+      return key;
+    })
 {
   if (key_columns.size() > max_key_size_) {
     throw std::exception();
@@ -59,29 +65,36 @@ RecordsMapImpl::~RecordsMapImpl()
 }
 
 RecordsMapImpl::RecordsMapImpl(
-  const std::vector<std::string> key_columns
+  const std::vector<std::string> key_columns,
+  std::function<Key(const Record &)> make_key
 )
-: RecordsMapImpl({}, {}, key_columns)
-{
-}
-
-RecordsMapImpl::RecordsMapImpl(const RecordsMapImpl & records)
-: RecordsMapImpl(records, records.get_columns())
-{
-}
-
-RecordsMapImpl::RecordsMapImpl(
-  const std::vector<std::string> columns,
-  const std::vector<std::string> key_columns
-)
-: RecordsMapImpl({}, columns, key_columns)
+: RecordsMapImpl({}, {}, key_columns, make_key)
 {
 }
 
 RecordsMapImpl::RecordsMapImpl(
   const RecordsMapImpl & records,
-  const std::vector<std::string> key_columns)
-: RecordsMapImpl(records.get_data(), records.get_columns(), key_columns)
+  std::function<Key(const Record &)> make_key
+)
+: RecordsMapImpl(records, records.get_columns(), make_key)
+{
+}
+
+RecordsMapImpl::RecordsMapImpl(
+  const std::vector<std::string> columns,
+  const std::vector<std::string> key_columns,
+  std::function<Key(const Record &)> make_key
+)
+: RecordsMapImpl({}, columns, key_columns, make_key)
+{
+}
+
+RecordsMapImpl::RecordsMapImpl(
+  const RecordsMapImpl & records,
+  const std::vector<std::string> key_columns,
+  std::function<Key(const Record &)> make_key
+)
+: RecordsMapImpl(records.get_data(), records.get_columns(), key_columns, make_key)
 {
 }
 
@@ -92,25 +105,25 @@ void RecordsMapImpl::bind_drop_as_delay()
 
 void RecordsMapImpl::append(const Record & other)
 {
-  auto key = make_key(other);
+  auto key = make_key_(other);
   auto pair = std::make_pair(key, other);
   data_->insert(pair);
 }
 
-RecordsMapImpl::KeyT RecordsMapImpl::make_key(const Record & record)
-{
-  std::vector<uint64_t> key_values = {0, 0, 0};
-  for (size_t i = 0; i < key_columns_.size(); i++) {
-    auto & column = key_columns_[i];
-    key_values[i] = record.get(column);
-  }
+// Key RecordsMapImpl::make_key(const Record & record)
+// {
+//   Key key;
+//   for (size_t i = 0; i < key_columns_.size(); i++) {
+//     auto & column = key_columns_[i];
+//     key.add_key(record.get(column));
+//   }
 
-  return std::make_tuple(key_values[0], key_values[1], key_values[2]);
-}
+//   return key;
+// }
 
 std::unique_ptr<RecordsBase> RecordsMapImpl::clone() const
 {
-  return std::make_unique<RecordsMapImpl>(*this);
+  return std::make_unique<RecordsMapImpl>(*this, make_key_);
 }
 
 
@@ -130,26 +143,17 @@ void RecordsMapImpl::filter_if(const std::function<bool(Record)> & f)
   for (auto it = begin(); it->has_next(); it->next()) {
     auto & record = it->get_record();
     if (f(record)) {
-      auto key = make_key(record);
+      auto key = make_key_(record);
       tmp->insert(std::make_pair(key, record));
     }
   }
   data_ = std::move(tmp);
 }
 
-void RecordsMapImpl::sort(std::string key, std::string sub_key, bool ascending)
+void RecordsMapImpl::sort(std::vector<std::string> keys, bool ascending)
 {
-  (void) key;
-  (void) sub_key;
+  (void) keys;
   (void) ascending;
-
-  throw std::exception();
-}
-
-void RecordsMapImpl::sort_column_order(bool ascending, bool put_none_at_top)
-{
-  (void) ascending;
-  (void) put_none_at_top;
 
   throw std::exception();
 }

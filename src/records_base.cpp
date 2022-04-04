@@ -228,8 +228,8 @@ private:
 
 std::unique_ptr<RecordsBase> RecordsBase::merge(
   const RecordsBase & right_records,
-  std::string join_left_key,
-  std::string join_right_key,
+  std::vector<std::string> join_left_keys,
+  std::vector<std::string> join_right_keys,
   std::vector<std::string> columns,
   std::string how,
   std::string progress_label
@@ -245,9 +245,13 @@ std::unique_ptr<RecordsBase> RecordsBase::merge(
   auto right_records_copy = right_records.clone();
 
   auto column_side = "_tmp_merge_side";
-  auto column_merge_stamp = "_tmp_merge_stamp";
   auto column_has_valid_join_key = "_tmp_merge_has_valid_join_key";
-  auto column_join_key = "_tmp_merge_join_key";
+  std::vector<std::string> column_join_keys;
+  for (size_t i = 0; i < join_left_keys.size(); i++) {
+    column_join_keys.emplace_back(
+      "_tmp_merge_join_key_" + std::to_string(i)
+    );
+  }
   auto column_found_right_record = "_tmp_merge_found_right_record";
 
 
@@ -266,21 +270,24 @@ std::unique_ptr<RecordsBase> RecordsBase::merge(
       record.add(column_has_valid_join_key, has_valid_join_key);
 
       if (has_valid_join_key) {
-        record.add(column_merge_stamp, record.get(join_key));
-        record.add(column_join_key, record.get(join_key));
-      } else {
-        record.add(column_merge_stamp, UINT64_MAX);
+        for (const auto & column_join_key : column_join_keys) {
+          record.add(column_join_key, record.get_with_default(join_key, UINT64_MAX));
+        }
       }
     };
 
   for (auto it = left_records_copy->begin(); it->has_next(); it->next()) {
     auto & record = it->get_record();
-    asisgn_temporal_columns(record, join_left_key);
+    for (auto & join_left_key : join_left_keys) {
+      asisgn_temporal_columns(record, join_left_key);
+    }
   }
 
   for (auto it = right_records_copy->begin(); it->has_next(); it->next()) {
     auto & record = it->get_record();
-    asisgn_temporal_columns(record, join_right_key);
+    for (auto & join_right_key : join_right_keys) {
+      asisgn_temporal_columns(record, join_right_key);
+    }
   }
 
   auto concat_columns = UniqueList();
@@ -290,19 +297,29 @@ std::unique_ptr<RecordsBase> RecordsBase::merge(
   {
     column_side,
     column_has_valid_join_key,
-    column_merge_stamp,
-    column_join_key
   });
+  concat_columns.add_columns(column_join_keys);
 
-  RecordsMapImpl concat_records(concat_columns.as_list(), {column_merge_stamp, column_side});
+  auto make_key = [&column_join_keys, &column_side](const Record & r) {
+      Key key;
+      for (auto & column_join_key : column_join_keys) {
+        key.add_key(r.get_with_default(column_join_key, UINT64_MAX));
+      }
+      key.add_key(r.get(column_side));
+      return key;
+    };
+
+  RecordsMapImpl concat_records(concat_columns.as_list(), {column_side}, make_key);
   concat_records.concat(*left_records_copy);
   concat_records.concat(*right_records_copy);
 
   std::vector<Record *> empty_records;
   std::vector<Record *> left_records_;
-  std::set<uint64_t> processed_stamps;
+  std::unordered_set<Key, Key::Hash> processed_stamps;
 
   auto merged_records = std::make_unique<RecordsVectorImpl>(columns);
+  auto sort_keys = column_join_keys;
+  sort_keys.emplace_back(column_side);
 
   auto bar = Progress(concat_records.size(), progress_label);
   for (auto it = concat_records.begin(); it->has_next(); it->next()) {
@@ -313,7 +330,10 @@ std::unique_ptr<RecordsBase> RecordsBase::merge(
       continue;
     }
 
-    auto join_value = record.get(column_join_key);
+    Key join_value;
+    for (auto & column_join_key : column_join_keys) {
+      join_value.add_key(record.get(column_join_key));
+    }
     if (processed_stamps.count(join_value) == 0) {
       for (auto & left_record : left_records_) {
         if (left_record->get(column_found_right_record) == false) {
@@ -357,8 +377,8 @@ std::unique_ptr<RecordsBase> RecordsBase::merge(
   }
 
   merged_records->drop_columns(
-    {column_side, column_merge_stamp, column_join_key,
-      column_has_valid_join_key, column_found_right_record});
+    {column_side, column_has_valid_join_key, column_found_right_record});
+  merged_records->drop_columns(column_join_keys);
 
   return merged_records;
 }
@@ -437,7 +457,14 @@ std::unique_ptr<RecordsBase> RecordsBase::merge_sequencial(
     column_merge_stamp,
     column_has_merge_stamp,
   });
-  RecordsMapImpl concat_records({}, concat_columns.as_list(), {column_merge_stamp, column_side});
+  auto make_key = [&column_merge_stamp, &column_side](Record r) {
+      Key key;
+      key.add_key(r.get_with_default(column_merge_stamp, UINT64_MAX));
+      key.add_key(r.get_with_default(column_side, UINT64_MAX));
+      return key;
+    };
+  RecordsMapImpl concat_records({},
+    concat_columns.as_list(), {column_merge_stamp, column_side}, make_key);
   concat_records.concat(*left_records_copy);
   concat_records.concat(*right_records_copy);
 
@@ -640,7 +667,14 @@ std::unique_ptr<RecordsBase> RecordsBase::merge_sequencial_for_addr_track(
 
   auto merged_records = std::make_unique<RecordsVectorImpl>(merged_columns.as_list());
 
-  RecordsMapImpl concat_records({}, merged_columns.as_list(), {column_timestamp, column_type});
+  auto make_key = [&column_timestamp, &column_type](Record r) {
+      Key key;
+      key.add_key(r.get(column_timestamp));
+      key.add_key(r.get(column_type));
+      return key;
+    };
+  RecordsMapImpl concat_records({},
+    merged_columns.as_list(), {column_timestamp, column_type}, make_key);
   concat_records.concat(*source_records_tmp);
   concat_records.concat(*copy_records_tmp);
   concat_records.concat(*sink_records_tmp);
