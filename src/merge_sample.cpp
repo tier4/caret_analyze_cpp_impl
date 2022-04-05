@@ -24,6 +24,7 @@ void run_merge_sequencial_for_addr_track();
 void run_merge_sequencial_with_key(std::string how);
 void run_merge_sequencial_with_loss(std::string how);
 void run_merge_sequencial_without_key(std::string how);
+void run_merge_sequencial_with_multi_join_key(std::string how);
 void run_sort_columns();
 void run_map();
 
@@ -48,7 +49,8 @@ int main(int argc, char ** argvs)
 
   // run_merge_sequencial_with_key("inner");
   // run_merge_sequencial_without_key("inner");
-  run_merge_sequencial_with_loss("outer");
+  // run_merge_sequencial_with_loss("inner");
+  run_merge_sequencial_with_multi_join_key("inner");
   return 0;
 }
 
@@ -242,8 +244,8 @@ void run_merge_sequencial_with_key(std::string how)
   right_records.append(Record({{"key", 2}, {"sub_stamp", 5}}));
 
   auto merged_records = left_records.merge_sequencial(
-    right_records, "stamp", "sub_stamp", "key",
-    "key", {"key", "stamp", "sub_stamp"},
+    right_records, "stamp", "sub_stamp", {"key"},
+    {"key"}, {"key", "stamp", "sub_stamp"},
     how);
 
   print_records(*merged_records);
@@ -265,7 +267,7 @@ void run_merge_sequencial_without_key(std::string how)
 
   auto merged_records = left_records.merge_sequencial(
     right_records, "stamp", "sub_stamp",
-    "", "", {"stamp", "sub_stamp"}, how);
+    {}, {}, {"stamp", "sub_stamp"}, how);
 
   print_records(*merged_records);
 }
@@ -286,8 +288,30 @@ void run_merge_sequencial_with_loss(std::string how)
   right_records.append(Record({{"other_stamp_", 14}}));
 
   auto merged_records = left_records.merge_sequencial(
-    right_records, "stamp", "stamp_", "value", "value",
+    right_records, "stamp", "stamp_", {"value"}, {"value"},
     {"other_stamp", "stamp", "value", "other_stamp_"},
+    how);
+
+  print_records(*merged_records);
+}
+
+void run_merge_sequencial_with_multi_join_key(std::string how)
+{
+  RecordsVectorImpl left_records;
+  left_records.append(Record({{"stamp", 0}, {"k0", 0}, {"k1", 1}}));
+  left_records.append(Record({{"stamp", 3}, {"k0", 1}}));
+  left_records.append(Record({{"stamp", 4}, {"k0", 2}, {"k1", 3}}));
+  left_records.append(Record({{"stamp", 4}, {"k0", 2}, {"k1", 3}}));
+  left_records.append(Record({{"stamp", 4}}));
+
+  RecordsVectorImpl right_records;
+  right_records.append(Record({{"sub_stamp", 1}, {"k0", 0}, {"k1", 1}}));
+  right_records.append(Record({{"sub_stamp", 6}, {"k1", 3}}));
+  right_records.append(Record({{"sub_stamp", 7}, {"k0", 2}, {"k1", 3}}));
+
+  auto merged_records = left_records.merge_sequencial(
+    right_records, "stamp", "sub_stamp", {"k0", "k1"}, {"k0", "k1"},
+    {"stamp", "sub_stamp", "k0", "k1"},
     how);
 
   print_records(*merged_records);

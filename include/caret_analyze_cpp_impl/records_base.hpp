@@ -92,8 +92,8 @@ public:
     const RecordsBase & right_records,
     std::string left_stamp_key,
     std::string right_stamp_key,
-    std::string join_left_key,
-    std::string join_right_key,
+    std::vector<std::string> join_left_keys,
+    std::vector<std::string> join_right_keys,
     std::vector<std::string> columns,
     std::string how,
     std::string progress_label = "");

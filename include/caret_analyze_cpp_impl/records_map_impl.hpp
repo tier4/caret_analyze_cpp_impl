@@ -29,68 +29,8 @@
 #include "caret_analyze_cpp_impl/column_manager.hpp"
 #include "caret_analyze_cpp_impl/iterator_base.hpp"
 #include "caret_analyze_cpp_impl/records_base.hpp"
+#include "caret_analyze_cpp_impl/key.hpp"
 
-class Key
-{
-public:
-  void add_key(uint64_t key)
-  {
-    keys_.emplace_back(key);
-  }
-
-  bool operator==(const Key & other) const
-  {
-    if (keys_.size() != other.keys_.size()) {
-      return false;
-    }
-    for (size_t i = 0; i < keys_.size(); i++) {
-      if (keys_[i] != other.keys_[i]) {
-        return false;
-      }
-    }
-    return true;
-  }
-
-  bool operator<(const Key & other) const
-  {
-    for (size_t i = 0; i < keys_.size(); i++) {
-      if (keys_.size() < i + 1) {
-        return true;
-      }
-      if (other.keys_.size() < i + 1) {
-        return true;
-      }
-
-      if (keys_[i] < other.keys_[i]) {
-        return true;
-      } else if (keys_[i] > other.keys_[i]) {
-        return false;
-      }
-    }
-    return true;
-  }
-
-
-  size_t get_hash() const
-  {
-    size_t hash_value = 17;
-    for (auto & key_val : keys_) {
-      hash_value += hash_value * 31 + std::hash<uint64_t>()(key_val);
-    }
-    return hash_value;
-  }
-
-  struct Hash
-  {
-    size_t operator()(const Key & keys) const
-    {
-      return keys.get_hash();
-    }
-  };
-
-private:
-  std::vector<uint64_t> keys_;
-};
 
 class RecordsMapImpl : public RecordsBase
 {

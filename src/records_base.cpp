@@ -34,6 +34,7 @@
 #include "caret_analyze_cpp_impl/column_manager.hpp"
 #include "caret_analyze_cpp_impl/progress.hpp"
 #include "caret_analyze_cpp_impl/records.hpp"
+#include "caret_analyze_cpp_impl/key.hpp"
 
 enum Side {Left, Right};
 
@@ -388,8 +389,8 @@ std::unique_ptr<RecordsBase> RecordsBase::merge_sequencial(
   const RecordsBase & right_records,
   std::string left_stamp_key,
   std::string right_stamp_key,
-  std::string join_left_key,
-  std::string join_right_key,
+  std::vector<std::string> join_left_keys,
+  std::vector<std::string> join_right_keys,
   std::vector<std::string> columns,
   std::string how,
   std::string progress_label
@@ -421,31 +422,45 @@ std::unique_ptr<RecordsBase> RecordsBase::merge_sequencial(
     std::vector<uint64_t>(right_records_copy->size(), Right)
   );
 
-  auto assign_temporal_columns = [&](Record & record, std::string & join_key) {
+  auto assign_temporal_columns = [&](Record & record, std::vector<std::string> & join_keys) {
+      std::set<std::string> join_keys_set;
+      for (auto & join_key : join_keys) {
+        join_keys_set.insert(join_key);
+      }
+      std::set<std::string> record_columns_set;
+      for (auto & column : record.get_columns()) {
+        record_columns_set.insert(column);
+      }
+
+      std::set<std::string> set_diff;
+      std::set_intersection(
+        join_keys_set.begin(),
+        join_keys_set.end(),
+        record_columns_set.begin(),
+        record_columns_set.end(),
+        std::inserter(set_diff, set_diff.begin())
+      );
       record.add(
         column_has_valid_join_key,
-        join_key == "" || record.has_column(join_key)
+        join_keys.size() == 0 || set_diff.size() == join_keys_set.size()
       );
 
-      if (record.get(column_side) == Left && record.has_column(left_stamp_key)) {
-        record.add(column_merge_stamp, record.get(left_stamp_key));
-        record.add(column_has_merge_stamp, true);
-      } else if (record.get(column_side) == Right && record.has_column(right_stamp_key)) {
-        record.add(column_merge_stamp, record.get(right_stamp_key));
-        record.add(column_has_merge_stamp, true);
+      if (record.get(column_side) == Left) {
+        record.add(column_merge_stamp, record.get_with_default(left_stamp_key, UINT64_MAX));
+        record.add(column_has_merge_stamp, record.has_column(left_stamp_key));
       } else {
-        record.add(column_merge_stamp, UINT64_MAX);
-        record.add(column_has_merge_stamp, false);
+        record.add(column_merge_stamp, record.get_with_default(right_stamp_key, UINT64_MAX));
+        record.add(column_has_merge_stamp, record.has_column(right_stamp_key));
       }
     };
 
   for (auto it = left_records_copy->begin(); it->has_next(); it->next()) {
     auto & record = it->get_record();
-    assign_temporal_columns(record, join_left_key);
+    assign_temporal_columns(record, join_left_keys);
   }
   for (auto it = right_records_copy->begin(); it->has_next(); it->next()) {
     auto & record = it->get_record();
-    assign_temporal_columns(record, join_right_key);
+    assign_temporal_columns(record, join_right_keys);
   }
 
   auto concat_columns = UniqueList();
@@ -468,26 +483,24 @@ std::unique_ptr<RecordsBase> RecordsBase::merge_sequencial(
   concat_records.concat(*left_records_copy);
   concat_records.concat(*right_records_copy);
 
-  auto get_join_value =
-    [&join_left_key, &join_right_key, &column_side](Record & record) -> uint64_t {
-      std::string join_key;
+  auto get_join_values =
+    [&join_left_keys, &join_right_keys, &column_side](Record & record) -> Key {
+      Key key;
       if (record.get(column_side) == Left) {
-        join_key = join_left_key;
+        for (auto & join_left_key : join_left_keys) {
+          key.add_key(record.get_with_default(join_left_key, UINT64_MAX));
+        }
       } else {
-        join_key = join_right_key;
+        for (auto & join_right_key : join_right_keys) {
+          key.add_key(record.get_with_default(join_right_key, UINT64_MAX));
+        }
       }
-      if (join_key == "") {
-        return 0;
-      } else if (record.has_column(join_key)) {
-        return record.get(join_key);
-      } else {
-        return UINT64_MAX;  // use as None
-      }
+      return key;
     };
 
 
   // std::unordered_map<int, uint64_t> sub_empty_records;
-  std::unordered_map<uint64_t, Record *> to_left_record_index;
+  std::unordered_map<Key, Record *, Key::Hash> to_left_record_index;
   std::unordered_map<Record *, std::vector<Record *>> to_sub_record_indices;
 
   for (auto it = concat_records.begin(); it->has_next(); it->next()) {
@@ -499,16 +512,10 @@ std::unique_ptr<RecordsBase> RecordsBase::merge_sequencial(
     if (record.get(column_side) == Left) {
       to_sub_record_indices[&record] = std::vector<Record *>();
 
-      auto join_value = get_join_value(record);
-      if (join_value == UINT64_MAX) {
-        continue;
-      }
+      auto join_value = get_join_values(record);
       to_left_record_index[join_value] = &record;
     } else if (record.get(column_side) == Right) {
-      auto join_value = get_join_value(record);
-      if (join_value == UINT64_MAX) {
-        continue;
-      }
+      auto join_value = get_join_values(record);
 
       if (to_left_record_index.count(join_value) == 0) {
         continue;
