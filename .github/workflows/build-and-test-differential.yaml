@@ -22,6 +22,10 @@ jobs:
       - name: Get modified packages
         id: get-modified-packages
         uses: autowarefoundation/autoware-github-actions/get-modified-packages@v1
+        
+      - name: Show files
+        run:
+          ls
 
       - name: Build
         if: ${{ steps.get-modified-packages.outputs.modified-packages != '' }}
