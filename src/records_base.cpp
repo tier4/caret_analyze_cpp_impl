@@ -266,29 +266,30 @@ std::unique_ptr<RecordsBase> RecordsBase::merge(
     std::vector<uint64_t>(right_records_copy->size(), Right)
   );
 
-  auto asisgn_temporal_columns = [&](Record & record, std::string & join_key) {
-      auto has_valid_join_key = record.has_column(join_key);
+  auto asisgn_temporal_columns = [&](Record & record, std::vector<std::string> & join_keys) {
+      auto has_valid_join_key = true;
+      for (auto & join_key : join_keys) {
+        has_valid_join_key &= record.has_column(join_key);
+      }
+
       record.add(column_has_valid_join_key, has_valid_join_key);
 
-      if (has_valid_join_key) {
-        for (const auto & column_join_key : column_join_keys) {
-          record.add(column_join_key, record.get_with_default(join_key, UINT64_MAX));
-        }
+      // if (has_valid_join_key) {
+      for (size_t i = 0; i < join_keys.size(); i++) {
+        const auto & column_join_key = column_join_keys[i];
+        const auto & join_key = join_keys[i];
+        record.add(column_join_key, record.get_with_default(join_key, UINT64_MAX));
       }
     };
 
   for (auto it = left_records_copy->begin(); it->has_next(); it->next()) {
     auto & record = it->get_record();
-    for (auto & join_left_key : join_left_keys) {
-      asisgn_temporal_columns(record, join_left_key);
-    }
+    asisgn_temporal_columns(record, join_left_keys);
   }
 
   for (auto it = right_records_copy->begin(); it->has_next(); it->next()) {
     auto & record = it->get_record();
-    for (auto & join_right_key : join_right_keys) {
-      asisgn_temporal_columns(record, join_right_key);
-    }
+    asisgn_temporal_columns(record, join_right_keys);
   }
 
   auto concat_columns = UniqueList();
