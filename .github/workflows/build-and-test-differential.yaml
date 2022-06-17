@@ -32,11 +32,11 @@ jobs:
           target-packages: ${{ steps.get-modified-packages.outputs.modified-packages }}
           build-depends-repos: build_depends.repos
 
-      - name: Add AMENT_IGNORE for submodule
+      - name: Add COLCON_IGNORE for submodule
         run: |
-          touch ./CARET_analyze_cpp_impl/json/AMENT_IGNORE
-          touch ./CARET_analyze_cpp_impl/indicators/AMENT_IGNORE
-          touch ./CARET_analyze_cpp_impl/pybind11/AMENT_IGNORE
+          touch ./CARET_analyze_cpp_impl/json/COLCON_IGNORE
+          touch ./CARET_analyze_cpp_impl/indicators/COLCON_IGNORE
+          touch ./CARET_analyze_cpp_impl/pybind11/COLCON_IGNORE
 
       - name: Test
         id: test
