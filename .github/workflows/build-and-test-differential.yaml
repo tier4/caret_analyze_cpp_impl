@@ -17,12 +17,6 @@ jobs:
           fetch-depth: 0
           submodules: 'recursive'
           
-      - name: Add AMENT_IGNORE for submodule
-        run: |
-          touch ./CARET_analyze_cpp_impl/json/AMENT_IGNORE
-          touch ./CARET_analyze_cpp_impl/indicators/AMENT_IGNORE
-          touch ./CARET_analyze_cpp_impl/pybind11/AMENT_IGNORE
-
       - name: Remove exec_depend
         uses: autowarefoundation/autoware-github-actions/remove-exec-depend@v1
 
@@ -37,6 +31,12 @@ jobs:
           rosdistro: galactic
           target-packages: ${{ steps.get-modified-packages.outputs.modified-packages }}
           build-depends-repos: build_depends.repos
+
+      - name: Add AMENT_IGNORE for submodule
+        run: |
+          touch ./CARET_analyze_cpp_impl/json/AMENT_IGNORE
+          touch ./CARET_analyze_cpp_impl/indicators/AMENT_IGNORE
+          touch ./CARET_analyze_cpp_impl/pybind11/AMENT_IGNORE
 
       - name: Test
         id: test
