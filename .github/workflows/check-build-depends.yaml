@@ -20,10 +20,9 @@ jobs:
           
       - name: Add AMENT_IGNORE for submodule
         run: |
-          BASE_DIR=./CARET_analyze_cpp_impl/CARET_analyze_cpp_impl/CARET_analyze_cpp_impl
-          touch ${BASE_DIR}/json/AMENT_IGNORE
-          touch ${BASE_DIR}/indicators/AMENT_IGNORE
-          touch ${BASE_DIR}/pybind11/AMENT_IGNORE
+          touch ./CARET_analyze_cpp_impl/json/AMENT_IGNORE
+          touch ./CARET_analyze_cpp_impl/indicators/AMENT_IGNORE
+          touch ./CARET_analyze_cpp_impl/pybind11/AMENT_IGNORE
 
       - name: Remove exec_depend
         uses: autowarefoundation/autoware-github-actions/remove-exec-depend@v1
