@@ -6,11 +6,13 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 endif()
 
 find_package(ament_cmake REQUIRED)
+find_package(Python3 REQUIRED COMPONENTS Interpreter Development)
 
-add_subdirectory(pybind11)
+find_package(pybind11_vendor REQUIRED)
+find_package(pybind11 REQUIRED)
+
 include_directories(
   include
-  pybind11/include
   json/include
   indicators/include
 )
