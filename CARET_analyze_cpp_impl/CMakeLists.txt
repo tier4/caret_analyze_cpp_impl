@@ -10,10 +10,10 @@ find_package(Python3 REQUIRED COMPONENTS Interpreter Development)
 
 find_package(pybind11_vendor REQUIRED)
 find_package(pybind11 REQUIRED)
+find_package(yaml_cpp_vendor REQUIRED)
 
 include_directories(
   include
-  json/include
   indicators/include
 )
 
@@ -49,6 +49,10 @@ add_library(
   ${srcs}
 )
 
+target_link_libraries(${PROJECT_NAME}
+  ${yaml_cpp_vendor_LIBRARIES}
+)
+
 install(
   TARGETS ${PROJECT_NAME}
   EXPORT ${PROJECT_NAME}
@@ -70,6 +74,10 @@ src/iterator_map_impl.cpp
 src/progress.cpp
 src/column_manager.cpp
 src/file.cpp
+)
+
+target_link_libraries(merge_sample
+  ${yaml_cpp_vendor_LIBRARIES}
 )
 
 

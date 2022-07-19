@@ -28,7 +28,7 @@
 #include <utility>
 #include <iterator>
 
-#include "nlohmann/json.hpp"
+#include <yaml-cpp/yaml.h>
 
 #include "caret_analyze_cpp_impl/file.hpp"
 #include "caret_analyze_cpp_impl/record.hpp"
@@ -68,23 +68,22 @@ RecordsVectorImpl::RecordsVectorImpl(const RecordsVectorImpl & records)
   }
 }
 
-RecordsVectorImpl::RecordsVectorImpl(std::string json_path)
-: RecordsVectorImpl(File(json_path))
+RecordsVectorImpl::RecordsVectorImpl(std::string file_path)
+: RecordsVectorImpl(File(file_path))
 {
 }
 
 RecordsVectorImpl::RecordsVectorImpl(const File & file)
 : RecordsVectorImpl()
 {
-  using json = nlohmann::json;
   auto &s =  file.get_data();
-  json records_json = json::parse(s);
+  YAML::Node primes = YAML::Load(s.c_str());
 
-  for (auto & record_json : records_json) {
+  for (const auto & record_yaml : primes) {
     Record record;
-    for (auto & elem : record_json.items()) {
-      auto & key = elem.key();
-      auto & value = elem.value();
+    for (const auto & elem : record_yaml) {
+        auto key = elem.first.as<std::string>();
+        auto value = elem.second.as<uint64_t>();
       record.add(key, value);
     }
     append(record);
