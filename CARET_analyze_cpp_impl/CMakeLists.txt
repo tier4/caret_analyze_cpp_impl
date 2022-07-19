@@ -16,17 +16,23 @@ include_directories(
   json/include
   indicators/include
 )
+
+set(srcs
+  "src/record.cpp"
+  "src/records_base.cpp"
+  "src/records_vector_impl.cpp"
+  "src/records_map_impl.cpp"
+  "src/iterator_base.cpp"
+  "src/iterator_vector_impl.cpp"
+  "src/iterator_map_impl.cpp"
+  "src/progress.cpp"
+  "src/column_manager.cpp"
+  "src/file.cpp"
+)
+
 pybind11_add_module(record_cpp_impl
-src/pybind.cpp
-src/record.cpp
-src/records_base.cpp
-src/records_vector_impl.cpp
-src/records_map_impl.cpp
-src/iterator_base.cpp
-src/iterator_vector_impl.cpp
-src/iterator_map_impl.cpp
-src/progress.cpp
-src/column_manager.cpp
+  ${srcs}
+  "src/pybind.cpp"
 )
 
 install(
@@ -36,6 +42,19 @@ install(
   ARCHIVE DESTINATION lib
   RUNTIME DESTINATION bin
   INCLUDES DESTINATION include
+)
+
+add_library(
+  ${PROJECT_NAME}
+  ${srcs}
+)
+
+install(
+  TARGETS ${PROJECT_NAME}
+  EXPORT ${PROJECT_NAME}
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin
 )
 
 
@@ -50,11 +69,21 @@ src/iterator_vector_impl.cpp
 src/iterator_map_impl.cpp
 src/progress.cpp
 src/column_manager.cpp
+src/file.cpp
 )
+
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
+
   ament_lint_auto_find_test_dependencies()
+
+  find_package(ament_cmake_gtest REQUIRED)
+
+  ament_add_gmock(test_vector_impl
+    test/test_records_vector_impl.cpp
+  )
+  target_link_libraries(test_vector_impl ${PROJECT_NAME})
 endif()
 
 ament_package()

@@ -29,6 +29,7 @@
 #include "caret_analyze_cpp_impl/column_manager.hpp"
 #include "caret_analyze_cpp_impl/iterator_base.hpp"
 #include "caret_analyze_cpp_impl/records_base.hpp"
+#include "caret_analyze_cpp_impl/file.hpp"
 
 
 class RecordsVectorImpl : public RecordsBase
@@ -41,6 +42,7 @@ public:
   explicit RecordsVectorImpl(RecordsVectorImpl && records) = default;
 
   explicit RecordsVectorImpl(std::string json_path);
+  explicit RecordsVectorImpl(const File & file);
 
   ~RecordsVectorImpl() override;
 
