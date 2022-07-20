@@ -76,14 +76,14 @@ RecordsVectorImpl::RecordsVectorImpl(std::string file_path)
 RecordsVectorImpl::RecordsVectorImpl(const File & file)
 : RecordsVectorImpl()
 {
-  auto &s =  file.get_data();
+  auto & s = file.get_data();
   YAML::Node primes = YAML::Load(s.c_str());
 
   for (const auto & record_yaml : primes) {
     Record record;
     for (const auto & elem : record_yaml) {
-        auto key = elem.first.as<std::string>();
-        auto value = elem.second.as<uint64_t>();
+      auto key = elem.first.as<std::string>();
+      auto value = elem.second.as<uint64_t>();
       record.add(key, value);
     }
     append(record);
