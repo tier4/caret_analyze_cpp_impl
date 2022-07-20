@@ -8,7 +8,9 @@
   <license>Apache License 2.0</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
-  <build_depend>pybind11_vendor</build_depend>
+  <depend>pybind11_vendor</depend>
+  <depend>yaml_cpp_vendor</depend>
+  <depend>indicators_vendor</depend>
 
   <test_depend>ament_cmake_gmock</test_depend>
   <test_depend>ament_lint_auto</test_depend>

@@ -28,8 +28,6 @@
 #include <utility>
 #include <iterator>
 
-#include "nlohmann/json.hpp"
-
 #include "caret_analyze_cpp_impl/record.hpp"
 #include "caret_analyze_cpp_impl/common.hpp"
 #include "caret_analyze_cpp_impl/column_manager.hpp"

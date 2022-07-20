@@ -25,6 +25,7 @@
 #include <algorithm>
 #include <utility>
 #include <iterator>
+#include <yaml-cpp/yaml.h>
 
 #include "caret_analyze_cpp_impl/column_manager.hpp"
 #include "caret_analyze_cpp_impl/iterator_base.hpp"
@@ -41,7 +42,7 @@ public:
   explicit RecordsVectorImpl(std::vector<std::string> columns);
   explicit RecordsVectorImpl(RecordsVectorImpl && records) = default;
 
-  explicit RecordsVectorImpl(std::string json_path);
+  explicit RecordsVectorImpl(std::string file_path);
   explicit RecordsVectorImpl(const File & file);
 
   ~RecordsVectorImpl() override;

@@ -59,7 +59,7 @@ class RecordsVectorImplTest : public ::testing::Test
 
 TEST_F(RecordsVectorImplTest, test_constructor_empty_file)
 {
-    FileMock file_mock("[]");
+    FileMock file_mock("--- []");
 
     RecordsVectorImpl records(file_mock);
     auto data = records.get_data();
@@ -69,10 +69,9 @@ TEST_F(RecordsVectorImplTest, test_constructor_empty_file)
 TEST_F(RecordsVectorImplTest, test_constructor_file)
 {
     auto s = std::string(R"(
-        [
-            {"key": 1},
-            {"key": 2, "key_": 3}
-        ]
+        - key: 1
+        - key: 2
+          key_: 3
     )");
     FileMock file_mock(s);
 

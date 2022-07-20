@@ -10,11 +10,11 @@ find_package(Python3 REQUIRED COMPONENTS Interpreter Development)
 
 find_package(pybind11_vendor REQUIRED)
 find_package(pybind11 REQUIRED)
+find_package(yaml_cpp_vendor REQUIRED)
+find_package(indicators_vendor REQUIRED)
 
 include_directories(
   include
-  json/include
-  indicators/include
 )
 
 set(srcs
@@ -31,7 +31,6 @@ set(srcs
 )
 
 pybind11_add_module(record_cpp_impl
-  ${srcs}
   "src/pybind.cpp"
 )
 
@@ -45,8 +44,13 @@ install(
 )
 
 add_library(
-  ${PROJECT_NAME}
+  ${PROJECT_NAME} SHARED
   ${srcs}
+)
+
+ament_target_dependencies(${PROJECT_NAME}
+  yaml_cpp_vendor
+  indicators_vendor
 )
 
 install(
@@ -60,17 +64,17 @@ install(
 
 add_executable(merge_sample
 src/merge_sample.cpp
-src/record.cpp
-src/records_base.cpp
-src/records_vector_impl.cpp
-src/records_map_impl.cpp
-src/iterator_base.cpp
-src/iterator_vector_impl.cpp
-src/iterator_map_impl.cpp
-src/progress.cpp
-src/column_manager.cpp
-src/file.cpp
 )
+
+target_link_libraries(merge_sample
+  ${PROJECT_NAME}
+)
+
+target_link_libraries(record_cpp_impl
+  PRIVATE ${PROJECT_NAME}
+)
+
+ament_export_libraries(${PROJECT_NAME})
 
 
 if(BUILD_TESTING)
