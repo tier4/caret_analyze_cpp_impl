@@ -70,6 +70,12 @@ target_link_libraries(merge_sample
   ${PROJECT_NAME}
 )
 
+target_link_libraries(record_cpp_impl
+  PRIVATE ${PROJECT_NAME}
+)
+
+ament_export_libraries(${PROJECT_NAME})
+
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
