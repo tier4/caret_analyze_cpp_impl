@@ -30,6 +30,7 @@
 
 #include "nlohmann/json.hpp"
 
+#include "caret_analyze_cpp_impl/file.hpp"
 #include "caret_analyze_cpp_impl/record.hpp"
 #include "caret_analyze_cpp_impl/common.hpp"
 #include "caret_analyze_cpp_impl/column_manager.hpp"
@@ -68,12 +69,17 @@ RecordsVectorImpl::RecordsVectorImpl(const RecordsVectorImpl & records)
 }
 
 RecordsVectorImpl::RecordsVectorImpl(std::string json_path)
+: RecordsVectorImpl(File(json_path))
+{
+}
+
+RecordsVectorImpl::RecordsVectorImpl(const File & file)
 : RecordsVectorImpl()
 {
   using json = nlohmann::json;
-  std::ifstream json_file(json_path.c_str());
-  json records_json;
-  json_file >> records_json;
+  auto &s =  file.get_data();
+  json records_json = json::parse(s);
+
   for (auto & record_json : records_json) {
     Record record;
     for (auto & elem : record_json.items()) {
