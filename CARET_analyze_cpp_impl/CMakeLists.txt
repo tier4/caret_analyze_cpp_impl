@@ -11,10 +11,10 @@ find_package(Python3 REQUIRED COMPONENTS Interpreter Development)
 find_package(pybind11_vendor REQUIRED)
 find_package(pybind11 REQUIRED)
 find_package(yaml_cpp_vendor REQUIRED)
+find_package(indicators_vendor REQUIRED)
 
 include_directories(
   include
-  indicators/include
 )
 
 set(srcs
@@ -50,6 +50,7 @@ add_library(
 
 ament_target_dependencies(${PROJECT_NAME}
   yaml_cpp_vendor
+  indicators_vendor
 )
 
 install(
