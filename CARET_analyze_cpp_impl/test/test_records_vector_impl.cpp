@@ -24,61 +24,63 @@ using ::testing::_;
 using ::testing::Return;
 
 
-class FileMock: public File
+class FileMock : public File
 {
-    public:
-    explicit FileMock(std::string data)
-    : File()
-    {
-        data_ = data;
-    }
+public:
+  explicit FileMock(std::string data)
+  : File()
+  {
+    data_ = data;
+  }
 
-    ~FileMock() override
-    {
-    }
+  ~FileMock() override
+  {
+  }
 
-    explicit FileMock(const char data[])
-    : FileMock(std::string(data))
-    {
-    }
+  explicit FileMock(const char data[])
+  : FileMock(std::string(data))
+  {
+  }
 
-    const std::string & get_data() const override {
-        return data_;
-    }
+  const std::string & get_data() const override
+  {
+    return data_;
+  }
 
-    private:
-        std::string data_;
+private:
+  std::string data_;
 };
 
 class RecordsVectorImplTest : public ::testing::Test
 {
-    protected:
-    virtual void Setp(){
-    }
+protected:
+  virtual void Setp()
+  {
+  }
 };
 
 TEST_F(RecordsVectorImplTest, test_constructor_empty_file)
 {
-    FileMock file_mock("--- []");
+  FileMock file_mock("--- []");
 
-    RecordsVectorImpl records(file_mock);
-    auto data = records.get_data();
-    ASSERT_EQ(data.size(), (size_t) 0);
+  RecordsVectorImpl records(file_mock);
+  auto data = records.get_data();
+  ASSERT_EQ(data.size(), (size_t) 0);
 }
 
 TEST_F(RecordsVectorImplTest, test_constructor_file)
 {
-    auto s = std::string(R"(
+  auto s = std::string(R"(
         - key: 1
         - key: 2
           key_: 3
     )");
-    FileMock file_mock(s);
+  FileMock file_mock(s);
 
-    RecordsVectorImpl records(file_mock);
-    auto data = records.get_data();
-    ASSERT_EQ(data.size(), (size_t) 2);
-    ASSERT_EQ(data[0].get_data().at("key"), (uint64_t) 1);
-    ASSERT_EQ(data[1].get_data().at("key"), (uint64_t) 2);
-    ASSERT_EQ(data[1].get_data().at("key_"), (uint64_t) 3);
+  RecordsVectorImpl records(file_mock);
+  auto data = records.get_data();
+  ASSERT_EQ(data.size(), (size_t) 2);
+  ASSERT_EQ(data[0].get_data().at("key"), (uint64_t) 1);
+  ASSERT_EQ(data[1].get_data().at("key"), (uint64_t) 2);
+  ASSERT_EQ(data[1].get_data().at("key_"), (uint64_t) 3);
 }

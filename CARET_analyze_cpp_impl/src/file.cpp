@@ -25,7 +25,8 @@
 #include "caret_analyze_cpp_impl/file.hpp"
 
 
-File::File(std::string path) {
+File::File(std::string path)
+{
   std::ifstream ifs(path);
 
   if (!ifs) {
@@ -36,7 +37,7 @@ File::File(std::string path) {
   ifs >> data_;
 }
 File::File(const char path[])
-  : File(std::string(path))
+: File(std::string(path))
 {
 }
 
@@ -44,6 +45,7 @@ File::File()
 {
 }
 
-const std::string & File::get_data() const {
+const std::string & File::get_data() const
+{
   return data_;
 }
