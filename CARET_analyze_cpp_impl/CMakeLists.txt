@@ -31,7 +31,6 @@ set(srcs
 )
 
 pybind11_add_module(record_cpp_impl
-  ${srcs}
   "src/pybind.cpp"
 )
 
@@ -45,12 +44,12 @@ install(
 )
 
 add_library(
-  ${PROJECT_NAME}
+  ${PROJECT_NAME} SHARED
   ${srcs}
 )
 
-target_link_libraries(${PROJECT_NAME}
-  ${yaml_cpp_vendor_LIBRARIES}
+ament_target_dependencies(${PROJECT_NAME}
+  yaml_cpp_vendor
 )
 
 install(
@@ -64,20 +63,10 @@ install(
 
 add_executable(merge_sample
 src/merge_sample.cpp
-src/record.cpp
-src/records_base.cpp
-src/records_vector_impl.cpp
-src/records_map_impl.cpp
-src/iterator_base.cpp
-src/iterator_vector_impl.cpp
-src/iterator_map_impl.cpp
-src/progress.cpp
-src/column_manager.cpp
-src/file.cpp
 )
 
 target_link_libraries(merge_sample
-  ${yaml_cpp_vendor_LIBRARIES}
+  ${PROJECT_NAME}
 )
 
 
