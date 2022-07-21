@@ -67,7 +67,6 @@ void run_merge(std::string how)
   // left_records.append(Record({{"stamp", 3}, {"value", 3}}));
 
 
-
   // RecordsVectorImpl right_records;
   // right_records.append(Record({{"stamp_", 4}, {"value", 2}}));
   // right_records.append(Record({{"stamp_", 5}, {"value", 3}}));

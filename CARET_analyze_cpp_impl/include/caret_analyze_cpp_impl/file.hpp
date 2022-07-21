@@ -19,18 +19,18 @@
 
 class File
 {
-    public:
-        File();
+public:
+  File();
 
-        explicit File(const char path[]);
-        explicit File(std::string path);
+  explicit File(const char path[]);
+  explicit File(std::string path);
 
-        virtual ~File(){};
+  virtual ~File() {}
 
-        virtual const std::string & get_data() const;
+  virtual const std::string & get_data() const;
 
-    private:
-        std::string data_;
+private:
+  std::string data_;
 };
 
 #endif  //  CARET_ANALYZE_CPP_IMPL__FILE_HPP_
