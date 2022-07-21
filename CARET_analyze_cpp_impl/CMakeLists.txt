@@ -31,6 +31,7 @@ set(srcs
 )
 
 pybind11_add_module(record_cpp_impl
+  ${srcs}
   "src/pybind.cpp"
 )
 
