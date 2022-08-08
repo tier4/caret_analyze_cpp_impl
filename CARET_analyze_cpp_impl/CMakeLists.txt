@@ -36,7 +36,7 @@ pybind11_add_module(record_cpp_impl
 )
 
 set(LIBRARY_DESTIONATION
-	"lib/python3.${Python3_VERSION_MINOR}/site-packages"
+  "lib/python3.${Python3_VERSION_MINOR}/site-packages"
 )
 install(
 
