@@ -20,10 +20,10 @@
 void print_records(const RecordsBase & records);
 void run_merge(std::string how);
 void run_merge_with_drop(std::string how);
-void run_merge_sequencial_for_addr_track();
-void run_merge_sequencial_with_key(std::string how);
-void run_merge_sequencial_with_loss(std::string how);
-void run_merge_sequencial_without_key(std::string how);
+void run_merge_sequential_for_addr_track();
+void run_merge_sequential_with_key(std::string how);
+void run_merge_sequential_with_loss(std::string how);
+void run_merge_sequential_without_key(std::string how);
 
 int main(int argc, char ** argvs)
 {
@@ -39,11 +39,11 @@ int main(int argc, char ** argvs)
   // run_merge_with_drop("right");
   // run_merge_with_drop("outer");
 
-  // run_merge_sequencial_for_addr_track();
+  // run_merge_sequential_for_addr_track();
 
-  // run_merge_sequencial_with_key("inner");
-  // run_merge_sequencial_without_key("inner");
-  // run_merge_sequencial_with_loss("inner");
+  // run_merge_sequential_with_key("inner");
+  // run_merge_sequential_without_key("inner");
+  // run_merge_sequential_with_loss("inner");
   return 0;
 }
 
@@ -122,7 +122,7 @@ void run_merge_with_drop(std::string how)
   print_records(*merged_records);
 }
 
-void run_merge_sequencial_for_addr_track()
+void run_merge_sequential_for_addr_track()
 {
   RecordsVectorImpl source_records;
   source_records.append(Record({{"source_addr", 1}, {"source_stamp", 0}}));
@@ -143,7 +143,7 @@ void run_merge_sequencial_for_addr_track()
   sink_records.append(Record({{"sink_addr", 13}, {"sink_stamp", 24}}));
   sink_records.append(Record({{"sink_addr", 3}, {"sink_stamp", 25}}));
 
-  auto merged_records = source_records.merge_sequencial_for_addr_track(
+  auto merged_records = source_records.merge_sequential_for_addr_track(
     "source_stamp",
     "source_addr",
     copy_records,
@@ -158,7 +158,7 @@ void run_merge_sequencial_for_addr_track()
   print_records(*merged_records);
 }
 
-void run_merge_sequencial_with_key(std::string how)
+void run_merge_sequential_with_key(std::string how)
 {
   RecordsVectorImpl left_records;
   left_records.append(Record({{"key", 1}, {"stamp", 0}}));
@@ -172,7 +172,7 @@ void run_merge_sequencial_with_key(std::string how)
   right_records.append(Record({{"key", 1}, {"sub_stamp", 4}}));
   right_records.append(Record({{"key", 2}, {"sub_stamp", 5}}));
 
-  auto merged_records = left_records.merge_sequencial(
+  auto merged_records = left_records.merge_sequential(
     right_records, "stamp", "sub_stamp", "key",
     "key", {"key", "stamp", "sub_stamp"},
     how);
@@ -180,7 +180,7 @@ void run_merge_sequencial_with_key(std::string how)
   print_records(*merged_records);
 }
 
-void run_merge_sequencial_without_key(std::string how)
+void run_merge_sequential_without_key(std::string how)
 {
   RecordsVectorImpl left_records;
   left_records.append(Record({{"stamp", 0}}));
@@ -194,7 +194,7 @@ void run_merge_sequencial_without_key(std::string how)
   right_records.append(Record({{"sub_stamp", 6}}));
   right_records.append(Record({{"sub_stamp", 7}}));
 
-  auto merged_records = left_records.merge_sequencial(
+  auto merged_records = left_records.merge_sequential(
     right_records, "stamp", "sub_stamp",
     "", "", {"stamp", "sub_stamp"}, how);
 
@@ -202,7 +202,7 @@ void run_merge_sequencial_without_key(std::string how)
 }
 
 
-void run_merge_sequencial_with_loss(std::string how)
+void run_merge_sequential_with_loss(std::string how)
 {
   RecordsVectorImpl left_records;
   left_records.append(Record({{"other_stamp", 4}, {"stamp", 1}, {"value", 1}}));
@@ -216,7 +216,7 @@ void run_merge_sequencial_with_loss(std::string how)
   right_records.append(Record({{"other_stamp_", 10}}));
   right_records.append(Record({{"other_stamp_", 14}}));
 
-  auto merged_records = left_records.merge_sequencial(
+  auto merged_records = left_records.merge_sequential(
     right_records, "stamp", "sub_stamp", "value", "value",
     {"other_stamp", "stamp", "value", "other_stamp_"},
     how);
