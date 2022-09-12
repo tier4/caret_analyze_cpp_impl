@@ -87,7 +87,7 @@ public:
     std::string progress_label = ""
   );
 
-  std::unique_ptr<RecordsBase> merge_sequencial(
+  std::unique_ptr<RecordsBase> merge_sequential(
     const RecordsBase & right_records,
     std::string left_stamp_key,
     std::string right_stamp_key,
@@ -97,7 +97,7 @@ public:
     std::string how,
     std::string progress_label = "");
 
-  std::unique_ptr<RecordsBase> merge_sequencial_for_addr_track(
+  std::unique_ptr<RecordsBase> merge_sequential_for_addr_track(
     std::string source_stamp_key,
     std::string source_key,
     const RecordsBase & copy_records,

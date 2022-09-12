@@ -125,14 +125,14 @@ PYBIND11_MODULE(record_cpp_impl, m) {
     "merge", &RecordsBase::merge,
     py::call_guard<py::scoped_ostream_redirect, py::scoped_estream_redirect>())
   .def(
-    "merge_sequencial", &RecordsBase::merge_sequencial,
+    "merge_sequential", &RecordsBase::merge_sequential,
     py::call_guard<py::scoped_ostream_redirect, py::scoped_estream_redirect>())
   .def(
     "bind_drop_as_delay", &RecordsBase::bind_drop_as_delay,
     py::call_guard<py::scoped_ostream_redirect, py::scoped_estream_redirect>())
   .def(
-    "merge_sequencial_for_addr_track",
-    &RecordsBase::merge_sequencial_for_addr_track,
+    "merge_sequential_for_addr_track",
+    &RecordsBase::merge_sequential_for_addr_track,
     py::call_guard<py::scoped_ostream_redirect, py::scoped_estream_redirect>())
   .def(
     "groupby",
