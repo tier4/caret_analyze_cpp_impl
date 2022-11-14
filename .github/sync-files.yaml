@@ -8,7 +8,7 @@
     - source: .clang-format
     - source: .markdown-link-check.json
     - source: .markdownlint.yaml
-    #	- source: .pre-commit-config.yaml  # Removed because it conflicts with pre-commit-ci
+    # - source: .pre-commit-config.yaml  # Removed because it conflicts with pre-commit-ci
     - source: .pre-commit-config-optional.yaml
     - source: .prettierignore
     - source: .prettierrc.yaml
