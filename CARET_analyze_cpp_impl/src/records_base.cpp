@@ -716,7 +716,9 @@ std::unique_ptr<RecordsBase> RecordsBase::merge_sequential_for_addr_track(
         [&stamp_sets, &source_key, &record, &column_timestamp](const Record & x) {
           auto timestamp = x.get(column_timestamp);
           std::shared_ptr<StampSet> stamp_set = stamp_sets[timestamp];
-          bool has_same_source_addrs = stamp_set->count(record.get(source_key)) > 0;
+          bool has_same_source_addrs = false;
+          if(stamp_set != nullptr)
+            has_same_source_addrs = stamp_set->count(record.get(source_key)) > 0;
           return has_same_source_addrs;
         };
       std::vector<uint64_t> merged_addrs;
