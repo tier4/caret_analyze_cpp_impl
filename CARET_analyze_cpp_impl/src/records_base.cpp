@@ -715,7 +715,7 @@ std::unique_ptr<RecordsBase> RecordsBase::merge_sequential_for_addr_track(
         [&stamp_sets, &source_key, &record, &column_timestamp](const Record & x) {
           auto timestamp = x.get(column_timestamp);
           std::shared_ptr<StampSet> stamp_set = stamp_sets[timestamp];
-          if(stamp_set == nullptr) {
+          if　(stamp_set == nullptr) {
             std::string e = "WARNING : ";
             e += "The trace data may be corrupted. ";
             e += "Some elements are missing.";
