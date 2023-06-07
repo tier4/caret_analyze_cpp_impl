@@ -582,6 +582,7 @@ std::unique_ptr<RecordsBase> RecordsBase::merge_sequential_for_addr_track(
   enum RecordType { Copy, Sink, Source};
   // [python side implementation]
   // assert how in ["inner", "left", "right", "outer"]
+  std::cout << "Copy:" << Copy << ", Sink:" << Sink << ", Source:" << Source << std::endl;
 
   auto column_type = "_tmp_type";
   auto column_timestamp = "_tmp_timestamp";
@@ -687,6 +688,7 @@ std::unique_ptr<RecordsBase> RecordsBase::merge_sequential_for_addr_track(
       auto timestamp = record.get(column_timestamp);
       auto stamp_set = std::make_shared<StampSet>();
       auto addr = record.get(sink_from_key);
+      // std::cout << record.get(sink_from_key) << " : TYPE" << record.get(column_type) << std::endl;
       stamp_set->insert(addr);
       stamp_sets.insert(std::make_pair(timestamp, stamp_set));
       processing_records[addr] = &record;
@@ -719,7 +721,7 @@ std::unique_ptr<RecordsBase> RecordsBase::merge_sequential_for_addr_track(
             std::string e = "WARNING : ";
             e += "The trace data may be corrupted. ";
             e += "Some elements are missing.";
-            std::cout << e << std::endl;
+            std::cout << e << timestamp << std::endl;
             return false;
           }
           bool has_same_source_addrs = (stamp_set->count(record.get(source_key)) > 0);
@@ -733,9 +735,11 @@ std::unique_ptr<RecordsBase> RecordsBase::merge_sequential_for_addr_track(
           continue;
         }
 
+        auto tmp = processing_record.get(column_timestamp); // temperture implement
         processing_record.merge(record);
         merged_records->append(processing_record);
         merged_addrs.emplace_back(processing_record.get(sink_from_key));
+        processing_record.add(column_timestamp, tmp); // temperture implement
       }
       for (auto & merged_addr : merged_addrs) {
         if (processing_records.count(merged_addr) > 0) {
