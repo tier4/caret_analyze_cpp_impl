@@ -729,7 +729,7 @@ std::unique_ptr<RecordsBase> RecordsBase::merge_sequential_for_addr_track(
 
         processing_record.merge(record);
         merged_records->append(processing_record);
-        merged_addrs.emplace_back(processing_record.get(sink_from_key));
+        merged_addrs.emplace_back(processing_record_pair.first);
       }
       for (auto & merged_addr : merged_addrs) {
         if (processing_records.count(merged_addr) > 0) {
