@@ -11,7 +11,6 @@ find_package(Python3 REQUIRED COMPONENTS Interpreter Development)
 find_package(pybind11_vendor REQUIRED)
 find_package(pybind11 REQUIRED)
 find_package(yaml_cpp_vendor REQUIRED)
-find_package(indicators_vendor REQUIRED)
 
 include_directories(
   include
@@ -55,7 +54,13 @@ add_library(
 
 ament_target_dependencies(${PROJECT_NAME}
   yaml_cpp_vendor
-  indicators_vendor
+)
+
+install(
+  FILES ${CMAKE_CURRENT_SOURCE_DIR}/../LICENSE.indicators
+        ${CMAKE_CURRENT_SOURCE_DIR}/../LICENSE.termcolor
+  DESTINATION share/${PROJECT_NAME}/licenses
+  DESTINATION share/${PROJECT_NAME}
 )
 
 install(
