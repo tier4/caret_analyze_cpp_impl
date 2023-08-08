@@ -79,6 +79,8 @@ jobs:
           files: |
             **/*.cpp
             **/*.hpp
+          files_ignore: |
+            CARET_analyze_cpp_impl/include/indicators/*.hpp
 
       - name: Run clang-tidy
         if: ${{ steps.get-modified-files.outputs.all_changed_files != '' }}

@@ -20,6 +20,16 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.ref }}
 
+      - name: Get modified files
+        id: get-modified-files
+        uses: tj-actions/changed-files@v37
+        with:
+          files: |
+            **/*.cpp
+            **/*.hpp
+          files_ignore: |
+            CARET_analyze_cpp_impl/include/indicators/*.hpp
+
       - name: Run pre-commit
         uses: autowarefoundation/autoware-github-actions/pre-commit@v1
         with:

@@ -10,6 +10,16 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v3
 
+      - name: Get modified files
+        id: get-modified-files
+        uses: tj-actions/changed-files@v37
+        with:
+          files: |
+            **/*.cpp
+            **/*.hpp
+          files_ignore: |
+            CARET_analyze_cpp_impl/include/indicators/*.hpp
+
       - name: Run spell-check
         uses: autowarefoundation/autoware-github-actions/spell-check@v1
         with:
