@@ -1,4 +1,3 @@
-exclude: "CARET_analyze_cpp_impl/include/indicators/"
 ci:
   autofix_commit_msg: "ci(pre-commit): autofix"
   autoupdate_commit_msg: "ci(pre-commit): autoupdate"
@@ -50,4 +49,4 @@ repos:
     hooks:
       - id: hadolint
 
-exclude: .svg
+exclude: ".svg|\CARET_analyze_cpp_impl/include/indicators/"
