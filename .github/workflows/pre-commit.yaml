@@ -28,7 +28,7 @@ jobs:
             **/*.cpp
             **/*.hpp
           files_ignore: |
-            CARET_analyze_cpp_impl/include/indicators/*.hpp
+            CARET_analyze_cpp_impl/include/indicators
 
       - name: Run pre-commit
         uses: autowarefoundation/autoware-github-actions/pre-commit@v1
