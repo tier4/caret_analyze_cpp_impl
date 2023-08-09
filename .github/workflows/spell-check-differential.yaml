@@ -14,11 +14,11 @@ jobs:
         id: get-modified-files
         uses: tj-actions/changed-files@v37
         with:
+          files_ignore: |
+            **/indicators
           files: |
             **/*.cpp
             **/*.hpp
-          files_ignore: |
-            **/indicators
 
       - name: Run spell-check
         uses: autowarefoundation/autoware-github-actions/spell-check@v1
