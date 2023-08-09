@@ -14,9 +14,9 @@ jobs:
         id: get-modified-files
         uses: tj-actions/changed-files@v37
         with:
-          files_ignore:
+          - files_ignore:
             CARET_analyze_cpp_impl/include/indicators
-          files: |
+          - files: |
             **/*.cpp
             **/*.hpp
 
