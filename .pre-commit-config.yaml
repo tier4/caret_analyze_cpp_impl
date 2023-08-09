@@ -49,4 +49,6 @@ repos:
     hooks:
       - id: hadolint
 
-exclude: ".svg|CARET_analyze_cpp_impl/include/indicators/"
+exclude:
+  - .svg
+  - CARET_analyze_cpp_impl/include/indicators/
