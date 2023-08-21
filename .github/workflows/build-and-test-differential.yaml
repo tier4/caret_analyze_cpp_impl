@@ -76,10 +76,10 @@ jobs:
         id: get-modified-files
         uses: tj-actions/changed-files@v37
         with:
-          files_ignore: CARET_analyze_cpp_impl/include/indicators
+          files_ignore: 'CARET_analyze_cpp_impl/include/indicators'
           files: |
-            **/*.cpp
-            **/*.hpp
+            '**/*.cpp'
+            '**/*.hpp'
 
       - name: Run clang-tidy
         if: ${{ steps.get-modified-files.outputs.all_changed_files != '' }}
