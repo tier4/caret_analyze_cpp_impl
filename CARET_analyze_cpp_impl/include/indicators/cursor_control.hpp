@@ -1,4 +1,3 @@
-
 #ifndef INDICATORS_CURSOR_CONTROL
 #define INDICATORS_CURSOR_CONTROL
 
@@ -12,11 +11,13 @@
 #include <cstdio>
 #endif
 
-namespace indicators {
+namespace indicators
+{
 
 #if defined(_MSC_VER)
 
-static inline void show_console_cursor(bool const show) {
+static inline void show_console_cursor(bool const show)
+{
   HANDLE out = GetStdHandle(STD_OUTPUT_HANDLE);
 
   CONSOLE_CURSOR_INFO cursorInfo;
@@ -28,7 +29,8 @@ static inline void show_console_cursor(bool const show) {
 
 #else
 
-static inline void show_console_cursor(bool const show) {
+static inline void show_console_cursor(bool const show)
+{
   std::fputs(show ? "\033[?25h" : "\033[?25l", stdout);
 }
 
