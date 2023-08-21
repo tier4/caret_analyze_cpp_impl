@@ -14,10 +14,10 @@ jobs:
         id: get-modified-files
         uses: tj-actions/changed-files@v37
         with:
-          files_ignore: CARET_analyze_cpp_impl/include/indicators
+          files_ignore: 'CARET_analyze_cpp_impl/include/indicators'
           files: |
-            **/*.cpp
-            **/*.hpp
+            '**/*.cpp'
+            '**/*.hpp'
 
       - name: Run spell-check
         uses: autowarefoundation/autoware-github-actions/spell-check@v1
