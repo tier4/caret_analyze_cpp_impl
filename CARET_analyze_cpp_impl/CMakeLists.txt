@@ -35,14 +35,14 @@ pybind11_add_module(record_cpp_impl
   "src/pybind.cpp"
 )
 
-set(LIBRARY_DESTIONATION
+set(LIBRARY_DESTINATION
   "lib/python3.${Python3_VERSION_MINOR}/site-packages"
 )
 install(
 
   TARGETS record_cpp_impl
   EXPORT export_record_cpp_impl
-  LIBRARY DESTINATION ${LIBRARY_DESTIONATION}
+  LIBRARY DESTINATION ${LIBRARY_DESTINATION}
   ARCHIVE DESTINATION lib
   RUNTIME DESTINATION bin
   INCLUDES DESTINATION include
