@@ -31,7 +31,6 @@
 #include "caret_analyze_cpp_impl/record.hpp"
 #include "caret_analyze_cpp_impl/common.hpp"
 #include "caret_analyze_cpp_impl/column_manager.hpp"
-#include "caret_analyze_cpp_impl/progress.hpp"
 #include "caret_analyze_cpp_impl/records.hpp"
 
 RecordsMapImpl::RecordsMapImpl(

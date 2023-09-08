@@ -34,7 +34,6 @@
 #include "caret_analyze_cpp_impl/record.hpp"
 #include "caret_analyze_cpp_impl/common.hpp"
 #include "caret_analyze_cpp_impl/column_manager.hpp"
-#include "caret_analyze_cpp_impl/progress.hpp"
 #include "caret_analyze_cpp_impl/records.hpp"
 
 RecordsVectorImpl::RecordsVectorImpl(std::vector<Record> records, std::vector<std::string> columns)

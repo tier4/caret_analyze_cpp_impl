@@ -83,8 +83,7 @@ public:
     std::string join_left_key,
     std::string join_right_key,
     std::vector<std::string> columns,
-    std::string how,
-    std::string progress_label = ""
+    std::string how
   );
 
   std::unique_ptr<RecordsBase> merge_sequential(
@@ -94,8 +93,8 @@ public:
     std::string join_left_key,
     std::string join_right_key,
     std::vector<std::string> columns,
-    std::string how,
-    std::string progress_label = "");
+    std::string how
+  );
 
   std::unique_ptr<RecordsBase> merge_sequential_for_addr_track(
     std::string source_stamp_key,
@@ -106,8 +105,7 @@ public:
     std::string copy_to_key,
     const RecordsBase & sink_records,
     std::string sink_stamp_key,
-    std::string sink_from_key,
-    std::string progress_label = ""
+    std::string sink_from_key
   );
 
 private:
