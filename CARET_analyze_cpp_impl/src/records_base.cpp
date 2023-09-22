@@ -253,7 +253,7 @@ std::unique_ptr<RecordsBase> RecordsBase::merge(
     std::vector<uint64_t>(right_records_copy->size(), Right)
   );
 
-  auto asisgn_temporal_columns = [&](Record & record, std::string & join_key) {
+  auto assign_temporal_columns = [&](Record & record, std::string & join_key) {
       auto has_valid_join_key = record.has_column(join_key);
       record.add(column_has_valid_join_key, has_valid_join_key);
 
@@ -267,12 +267,12 @@ std::unique_ptr<RecordsBase> RecordsBase::merge(
 
   for (auto it = left_records_copy->begin(); it->has_next(); it->next()) {
     auto & record = it->get_record();
-    asisgn_temporal_columns(record, join_left_key);
+    assign_temporal_columns(record, join_left_key);
   }
 
   for (auto it = right_records_copy->begin(); it->has_next(); it->next()) {
     auto & record = it->get_record();
-    asisgn_temporal_columns(record, join_right_key);
+    assign_temporal_columns(record, join_right_key);
   }
 
   auto concat_columns = UniqueList();
@@ -708,7 +708,7 @@ std::unique_ptr<RecordsBase> RecordsBase::merge_sequential_for_addr_track(
         std::shared_ptr<StampSet> stamp_set = stamp_sets[timestamp];
         stamp_set->insert(record.get(copy_from_key));
         merge_processing_record_keys(processing_record);
-        // No need for subsequent loops since we integreted them.
+        // No need for subsequent loops since we integrated them.
         break;
       }
     } else if (record.get(column_type) == Source) {
