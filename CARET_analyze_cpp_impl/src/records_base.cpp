@@ -32,7 +32,6 @@
 #include "caret_analyze_cpp_impl/record.hpp"
 #include "caret_analyze_cpp_impl/common.hpp"
 #include "caret_analyze_cpp_impl/column_manager.hpp"
-#include "caret_analyze_cpp_impl/progress.hpp"
 #include "caret_analyze_cpp_impl/records.hpp"
 
 enum Side {Left, Right};
@@ -223,8 +222,7 @@ std::unique_ptr<RecordsBase> RecordsBase::merge(
   std::string join_left_key,
   std::string join_right_key,
   std::vector<std::string> columns,
-  std::string how,
-  std::string progress_label
+  std::string how
 )
 {
   // [python side implementation]
@@ -296,10 +294,8 @@ std::unique_ptr<RecordsBase> RecordsBase::merge(
 
   auto merged_records = std::make_unique<RecordsVectorImpl>(columns);
 
-  auto bar = Progress(concat_records.size(), progress_label);
   for (auto it = concat_records.begin(); it->has_next(); it->next()) {
     auto & record = it->get_record();
-    bar.tick();
     if (!record.get(column_has_valid_join_key)) {
       empty_records.push_back(&record);
       continue;
@@ -363,8 +359,7 @@ std::unique_ptr<RecordsBase> RecordsBase::merge_sequential(
   std::string join_left_key,
   std::string join_right_key,
   std::vector<std::string> columns,
-  std::string how,
-  std::string progress_label
+  std::string how
 )
 {
   auto left_records_copy = this->clone();
@@ -485,12 +480,9 @@ std::unique_ptr<RecordsBase> RecordsBase::merge_sequential(
 
   std::unordered_set<const Record *> added;
 
-  std::size_t records_size = concat_records.size();
-  auto bar = Progress(records_size, progress_label);
   for (auto it = concat_records.begin(); it->has_next(); it->next()) {
     auto & current_record = it->get_record();
 
-    bar.tick();
     bool is_recorded = added.count(&current_record) > 0;
     if (is_recorded) {
       continue;
@@ -575,8 +567,7 @@ std::unique_ptr<RecordsBase> RecordsBase::merge_sequential_for_addr_track(
   std::string copy_to_key,
   const RecordsBase & sink_records,
   std::string sink_stamp_key,
-  std::string sink_from_key,
-  std::string progress_label
+  std::string sink_from_key
 )
 {
   enum RecordType { Copy, Sink, Source};
@@ -678,12 +669,10 @@ std::unique_ptr<RecordsBase> RecordsBase::merge_sequential_for_addr_track(
     };
 
 
-  auto bar = Progress(concat_records.size(), progress_label);
   for (auto it = concat_records.rbegin(); it->has_next(); it->next()) {
     auto & record = it->get_record();
     record.get_columns();
     record.get_data();
-    bar.tick();
     if (record.get(column_type) == Sink) {
       auto timestamp = record.get(column_timestamp);
       auto stamp_set = std::make_shared<StampSet>();

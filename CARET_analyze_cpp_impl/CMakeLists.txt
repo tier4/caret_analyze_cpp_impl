@@ -11,7 +11,6 @@ find_package(Python3 REQUIRED COMPONENTS Interpreter Development)
 find_package(pybind11_vendor REQUIRED)
 find_package(pybind11 REQUIRED)
 find_package(yaml_cpp_vendor REQUIRED)
-find_package(indicators_vendor REQUIRED)
 
 include_directories(
   include
@@ -25,7 +24,6 @@ set(srcs
   "src/iterator_base.cpp"
   "src/iterator_vector_impl.cpp"
   "src/iterator_map_impl.cpp"
-  "src/progress.cpp"
   "src/column_manager.cpp"
   "src/file.cpp"
 )
@@ -55,7 +53,6 @@ add_library(
 
 ament_target_dependencies(${PROJECT_NAME}
   yaml_cpp_vendor
-  indicators_vendor
 )
 
 install(
