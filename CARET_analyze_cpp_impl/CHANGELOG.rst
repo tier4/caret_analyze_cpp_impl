@@ -2,8 +2,8 @@
 Changelog for package caret_analyze_cpp_impl
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.5.0 (2024-01-31)
+------------------
 * chore: update package.xml version to 0.4.24 (`#192 <https://github.com/tier4/caret_analyze_cpp_impl/issues/192>`_)
 * Contributors: h-suzuki-isp
 
