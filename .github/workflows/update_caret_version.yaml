@@ -28,8 +28,7 @@ jobs:
       - name: Get New Branch and Tag
         id: tag
         run: |
-          # latest_tag=$(curl -s https://api.github.com/repos/${GITHUB_REPOSITORY}/tags | jq -r .[0].name)
-          latest_tag=$(curl -s https://api.github.com/repos/tier4/caret_analyze_cpp_impl/tags | jq -r .[0].name)
+          latest_tag=$(curl -s https://api.github.com/repos/${GITHUB_REPOSITORY}/tags | jq -r .[0].name)
           current_tag=${{ github.ref_name }}
           branch=rc/$current_tag
           echo "LATEST_TAG_NAME=$latest_tag" >> "$GITHUB_OUTPUT"
