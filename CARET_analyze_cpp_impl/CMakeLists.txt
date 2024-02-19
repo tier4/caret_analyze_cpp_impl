@@ -5,12 +5,14 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
 
-find_package(ament_cmake REQUIRED)
+set(Python_ARTIFACTS_INTERACTIVE ON)
+
 find_package(Python3 COMPONENTS Interpreter Development)
 
 find_package(pybind11_vendor REQUIRED)
-find_package(pybind11 REQUIRED)
+find_package(pybind11 CONFIG REQUIRED)
 find_package(yaml_cpp_vendor REQUIRED)
+find_package(ament_cmake REQUIRED)
 
 include_directories(
   include
