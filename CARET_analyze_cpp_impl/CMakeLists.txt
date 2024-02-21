@@ -7,7 +7,7 @@ endif()
 
 set(Python_ARTIFACTS_INTERACTIVE ON)
 
-find_package(Python3 COMPONENTS Interpreter Development)
+find_package(Python3 REQUIRED COMPONENTS Interpreter Development)
 
 find_package(pybind11_vendor REQUIRED)
 find_package(pybind11 CONFIG REQUIRED)
