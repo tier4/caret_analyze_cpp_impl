@@ -12,7 +12,6 @@ find_package(pybind11_vendor REQUIRED)
 find_package(pybind11 CONFIG REQUIRED)
 find_package(yaml_cpp_vendor REQUIRED)
 
-
 include_directories(
   include
 )
