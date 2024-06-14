@@ -14,6 +14,7 @@
 
 #ifndef CARET_ANALYZE_CPP_IMPL__RECORD_HPP_
 
+#include <cstdint>
 #include <tuple>
 #include <unordered_set>
 #include <unordered_map>
