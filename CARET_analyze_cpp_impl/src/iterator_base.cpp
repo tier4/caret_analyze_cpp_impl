@@ -34,8 +34,10 @@
 Record & IteratorBase::get_record() const
 {
   throw std::exception();
+  // NOLINTBEGIN(cppcheck-suppress[unreachableCode])
   static Record record;
   return record;
+  // NOLINTEND(cppcheck-suppress[unreachableCode])
 }
 
 void IteratorBase::next()
@@ -46,14 +48,18 @@ void IteratorBase::next()
 bool IteratorBase::has_next() const
 {
   throw std::exception();
+  // NOLINTBEGIN(cppcheck-suppress[unreachableCode])
   return false;
+  // NOLINTEND(cppcheck-suppress[unreachableCode])
 }
 
 const Record & ConstIteratorBase::get_record() const
 {
   throw std::exception();
+  // NOLINTBEGIN(cppcheck-suppress[unreachableCode])
   static Record record;
   return record;
+  // NOLINTEND(cppcheck-suppress[unreachableCode])
 }
 
 void ConstIteratorBase::next()
