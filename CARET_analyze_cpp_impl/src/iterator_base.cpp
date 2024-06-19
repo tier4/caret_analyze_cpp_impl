@@ -70,5 +70,7 @@ void ConstIteratorBase::next()
 bool ConstIteratorBase::has_next() const
 {
   throw std::exception();
+  // NOLINTBEGIN(cppcheck-suppress[unreachableCode])
   return false;
+  // NOLINTEND(cppcheck-suppress[unreachableCode])
 }
