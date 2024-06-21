@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  cppcheck-full:
+  cppcheck-all-files:
     runs-on: ubuntu-latest
 
     steps:
