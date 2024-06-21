@@ -58,7 +58,7 @@ jobs:
         continue-on-error: true
         id: cppcheck
         run: |
-          files=$(steps.get-modified-files.outputs.all_changed_files)
+          files=$(echo ${{ steps.get-modified-files.outputs.all_changed_files }})
           if [ -n "$files" ]; then
             echo "Running Cppcheck on changed files: $files"
             cppcheck --inline-suppr --enable=all --inconclusive --check-level=exhaustive --error-exitcode=1 --suppressions-list=.cppcheck_suppressions $files 2> cppcheck-report.txt
