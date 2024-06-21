@@ -48,9 +48,8 @@ void IteratorBase::next()
 bool IteratorBase::has_next() const
 {
   throw std::exception();
-  // cppcheck-suppress-begin unreachableCode
+  // cppcheck-suppress unreachableCode
   return false;
-  // cppcheck-suppress-end unreachableCode
 }
 
 const Record & ConstIteratorBase::get_record() const
