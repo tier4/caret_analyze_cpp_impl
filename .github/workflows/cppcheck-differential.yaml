@@ -35,6 +35,12 @@ jobs:
       - name: Get modified packages
         id: get-modified-packages
         uses: autowarefoundation/autoware-github-actions/get-modified-packages@v1
+        
+      # Display the modified packages
+      - name: Show modified packages
+        run: |
+          echo "Modified packages:"
+          echo "${{ steps.get-modified-packages.outputs.modified_packages }}"
 
       - name: Get modified files
         id: get-modified-files
@@ -43,6 +49,12 @@ jobs:
           files: |
             **/*.cpp
             **/*.hpp
+            
+      # Display the modified files  
+      - name: Show modified files
+        run: |
+          echo "Modified files:"
+          echo "${{ steps.get-modified-files.outputs.all_changed_files }}"
 
       - name: Run Cppcheck on changed files
         continue-on-error: true
