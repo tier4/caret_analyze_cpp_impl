@@ -34,7 +34,7 @@ jobs:
       - name: Get modified packages
         id: get-modified-packages
         uses: autowarefoundation/autoware-github-actions/get-modified-packages@v1
-        
+
       # Display the modified packages
       - name: Show modified packages
         run: |
@@ -43,13 +43,13 @@ jobs:
 
       - name: Get modified files
         id: get-modified-files
-        uses: tj-actions/changed-files@v44
+        uses: tj-actions/changed-files@v4
         with:
           files: |
             **/*.cpp
             **/*.hpp
-            
-      # Display the modified files  
+
+      # Display the modified files
       - name: Show modified files
         run: |
           echo "Modified files:"
@@ -74,7 +74,7 @@ jobs:
           cat cppcheck-report.txt
 
       - name: Upload Cppcheck report
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: cppcheck-report
           path: cppcheck-report.txt
