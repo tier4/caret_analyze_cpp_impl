@@ -16,7 +16,22 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y cppcheck=2.14.2 wget
+          sudo apt-get install -y snapd wget
+
+      - name: Check if snapd service is running
+        run: |
+          systemctl status snapd.service
+          if [[ $? -ne 0 ]]; then
+            echo "snapd service is not running. Starting..."
+            sudo systemctl start snapd.service
+          else
+            echo "snapd service is already running."
+          fi
+
+      # cppcheck from apt does not yet support --check-level args, and thus install from snap
+      - name: Install Cppcheck from snap
+        run: |
+          sudo snap install cppcheck
 
       # Download the cppcheck suppression file
       - name: Download cppcheck suppression file
