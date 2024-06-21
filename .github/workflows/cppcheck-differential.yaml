@@ -42,7 +42,7 @@ jobs:
 
       - name: Get modified files
         id: get-modified-files
-        uses: tj-actions/changed-files@v4
+        uses: tj-actions/changed-files@v44
         with:
           files: |
             **/*.cpp
