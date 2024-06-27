@@ -893,6 +893,7 @@ std::map<std::tuple<uint64_t>, std::unique_ptr<RecordsBase>> RecordsBase::groupb
       record.get_with_default(column0, UINT64_MAX)
     );
     if (map.count(key) == 0) {
+      // cppcheck-suppress stlFindInsert
       map[key] = std::make_unique<RecordsVectorImpl>(get_columns());
     }
     auto & records = map[key];
@@ -914,6 +915,7 @@ std::map<std::tuple<uint64_t, uint64_t>, std::unique_ptr<RecordsBase>> RecordsBa
       record.get_with_default(column1, UINT64_MAX)
     );
     if (map.count(key) == 0) {
+      // cppcheck-suppress stlFindInsert
       map[key] = std::make_unique<RecordsVectorImpl>(get_columns());
     }
     auto & records = map[key];
@@ -937,6 +939,7 @@ std::map<std::tuple<uint64_t, uint64_t, uint64_t>,
       record.get_with_default(column2, UINT64_MAX)
     );
     if (map.count(key) == 0) {
+      // cppcheck-suppress stlFindInsert
       map[key] = std::make_unique<RecordsVectorImpl>(get_columns());
     }
     auto & records = map[key];
