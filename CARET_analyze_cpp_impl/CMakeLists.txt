@@ -76,6 +76,8 @@ target_link_libraries(record_cpp_impl
   PRIVATE ${PROJECT_NAME}
 )
 
+target_link_libraries(${PROJECT_NAME} yaml-cpp)
+
 ament_export_libraries(${PROJECT_NAME})
 
 
