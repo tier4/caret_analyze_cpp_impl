@@ -11,10 +11,10 @@ jobs:
       fail-fast: false
       matrix:
         rosdistro:
-          - humble
+          - jazzy
         include:
-          - rosdistro: humble
-            container: ros:humble
+          - rosdistro: jazzy
+            container: ros:jazzy
             build-depends-repos: build_depends.repos
     steps:
       - name: Check out repository
@@ -57,7 +57,7 @@ jobs:
 
   clang-tidy-differential:
     runs-on: ubuntu-latest
-    container: ros:humble
+    container: ros:jazzy
     needs: build-and-test-differential
     steps:
       - name: Check out repository
@@ -84,7 +84,7 @@ jobs:
         if: ${{ steps.get-modified-files.outputs.all_changed_files != '' }}
         uses: autowarefoundation/autoware-github-actions/clang-tidy@v1
         with:
-          rosdistro: humble
+          rosdistro: jazzy
           target-packages: ${{ steps.get-modified-packages.outputs.modified-packages }}
           target-files: ${{ steps.get-modified-files.outputs.all_changed_files }}
           clang-tidy-config-url: https://raw.githubusercontent.com/autowarefoundation/autoware/main/.clang-tidy
